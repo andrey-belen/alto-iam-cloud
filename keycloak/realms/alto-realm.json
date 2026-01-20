@@ -2,7 +2,7 @@
   "realm": "alto",
   "enabled": true,
   "displayName": "Alto",
-  "sslRequired": "external",
+  "sslRequired": "none",
   "registrationAllowed": false,
   "resetPasswordAllowed": true,
   "loginWithEmailAllowed": true,
