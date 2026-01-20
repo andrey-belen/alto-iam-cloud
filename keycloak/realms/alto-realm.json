@@ -2,6 +2,7 @@
   "realm": "alto",
   "enabled": true,
   "displayName": "Alto",
+  "loginTheme": "alto",
   "sslRequired": "none",
   "registrationAllowed": false,
   "resetPasswordAllowed": true,

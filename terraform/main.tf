@@ -23,10 +23,31 @@ provider "keycloak" {
 }
 
 # ============================================================================
+# Master Realm Configuration
+# ============================================================================
+
+resource "keycloak_realm" "master" {
+  realm        = "master"
+  enabled      = true
+  display_name = "Alto"
+
+  login_theme = "alto"
+
+  # Allow login with email
+  login_with_email_allowed = true
+  duplicate_emails_allowed = false
+  reset_password_allowed   = true
+
+  # SSL requirement (set to NONE for dev, EXTERNAL for prod)
+  ssl_required = "NONE"
+}
+
+# ============================================================================
 # CRM Dashboard Client in Master Realm
 # ============================================================================
 
 resource "keycloak_openid_client" "alto_crm" {
+  depends_on = [keycloak_realm.master]
   realm_id                     = "master"
   client_id                    = "alto-crm"
   name                         = "Alto CRM Dashboard"
@@ -48,7 +69,7 @@ resource "keycloak_openid_client" "alto_crm" {
     var.crm_dashboard_url
   ]
 
-  login_theme = "keycloak"
+  login_theme = "alto"
 }
 
 # ============================================================================
