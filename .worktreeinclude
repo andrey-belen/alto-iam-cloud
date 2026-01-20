@@ -1,0 +1,7 @@
+# AICODE-NOTE: Files to copy between worktrees
+# Contains gitignored files needed for local development
+
+.env
+.env.development
+.env.test
+terraform/terraform.tfvars

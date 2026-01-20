@@ -1,0 +1,64 @@
+// AICODE-NOTE: Prisma schema for Alto API
+// AccessRequest model for tracking access requests
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Access Request Model
+// ============================================================================
+
+model AccessRequest {
+  id           String              @id @default(cuid())
+  propertyId   String              @map("property_id")
+  propertyName String              @map("property_name")
+  firstName    String              @map("first_name")
+  lastName     String              @map("last_name")
+  email        String
+  phone        String?
+  unit         String?
+  reason       String?
+  status       AccessRequestStatus @default(pending)
+  processedBy  String?             @map("processed_by")
+  processedAt  DateTime?           @map("processed_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([propertyId])
+  @@index([email])
+  @@index([createdAt])
+  @@map("access_requests")
+}
+
+enum AccessRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+// ============================================================================
+// Audit Log Model (optional - for tracking admin actions)
+// ============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  userId     String   @map("user_id")
+  userEmail  String   @map("user_email")
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

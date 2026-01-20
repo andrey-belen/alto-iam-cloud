@@ -1,0 +1,32 @@
+{
+  "name": "alto-mfa-email-otp-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for MFA Email OTP feature",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:mfa-otp": "vitest run integration/mfa-otp.test.ts",
+    "lint": "eslint --ext .ts .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "dotenv": "^16.3.0",
+    "eslint": "^8.55.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "@keycloak/keycloak-admin-client": "^24.0.0",
+    "axios": "^1.6.0",
+    "zod": "^3.22.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

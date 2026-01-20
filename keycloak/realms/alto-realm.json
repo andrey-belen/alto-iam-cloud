@@ -1,0 +1,92 @@
+{
+  "_comment": "AICODE-NOTE: Alto test realm configuration for MFA Email OTP. Import on Keycloak startup.",
+  "realm": "alto",
+  "enabled": true,
+  "displayName": "Alto",
+  "displayNameHtml": "<strong>Alto</strong>",
+  "loginTheme": "alto",
+  "emailTheme": "alto",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": true,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "maxFailureWaitSeconds": 300,
+  "failureResetTimeSeconds": 300,
+  "maxDeltaTimeSeconds": 43200,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "maxLoginFailures": 3,
+  "eventsEnabled": true,
+  "eventsExpiration": 604800,
+  "eventsListeners": ["jboss-logging"],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "SEND_VERIFY_EMAIL",
+    "USER_DISABLED_BY_TEMPORARY_LOCKOUT"
+  ],
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 300,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyInitialCounter": 0,
+  "clients": [
+    {
+      "clientId": "alto-test-client",
+      "name": "Alto Test Client",
+      "description": "Test client for MFA Email OTP integration tests",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "test-client-secret",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:8080"
+      ],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "testuser01",
+      "email": "testuser01@alto-test.local",
+      "firstName": "Test",
+      "lastName": "User One",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "testuser02",
+      "email": "testuser02@alto-test.local",
+      "firstName": "Test",
+      "lastName": "User Two",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "_comment": "AICODE-NOTE: Test user fixtures for MFA Email OTP integration tests. See data-model.md for entity specs.",
+  "users": [
+    {
+      "id": "test-user-01",
+      "username": "testuser01",
+      "email": "testuser01@alto-test.local",
+      "firstName": "Test",
+      "lastName": "User One",
+      "password": "TestPass123!",
+      "emailVerified": true,
+      "enabled": true,
+      "description": "Standard test user for happy path OTP flow"
+    },
+    {
+      "id": "test-user-02",
+      "username": "testuser02",
+      "email": "testuser02@alto-test.local",
+      "firstName": "Test",
+      "lastName": "User Two",
+      "password": "TestPass123!",
+      "emailVerified": true,
+      "enabled": true,
+      "description": "Test user for lockout scenarios"
+    },
+    {
+      "id": "test-user-03",
+      "username": "testuser03",
+      "email": "testuser03@alto-test.local",
+      "firstName": "Test",
+      "lastName": "User Three",
+      "password": "TestPass123!",
+      "emailVerified": false,
+      "enabled": true,
+      "description": "Test user with unverified email"
+    },
+    {
+      "id": "test-user-disabled",
+      "username": "disabled-user",
+      "email": "disabled@alto-test.local",
+      "firstName": "Disabled",
+      "lastName": "User",
+      "password": "TestPass123!",
+      "emailVerified": true,
+      "enabled": false,
+      "description": "Disabled user for access denied tests"
+    }
+  ],
+  "testRealm": {
+    "id": "alto-test",
+    "name": "Alto Test Realm",
+    "description": "Test realm for MFA Email OTP integration tests"
+  },
+  "testClient": {
+    "clientId": "alto-test-client",
+    "name": "Alto Test Client",
+    "description": "Test client for integration tests",
+    "publicClient": false,
+    "directAccessGrantsEnabled": true,
+    "standardFlowEnabled": true
+  },
+  "constants": {
+    "_comment": "Constants from data-model.md for test assertions",
+    "OTP_LENGTH": 6,
+    "OTP_EXPIRY_SECONDS": 300,
+    "MAX_OTP_ATTEMPTS": 3,
+    "LOCKOUT_DURATION_SECONDS": 300,
+    "RESEND_COOLDOWN_SECONDS": 60,
+    "EMAIL_DELIVERY_TIMEOUT_SECONDS": 10
+  }
+}
