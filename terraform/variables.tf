@@ -33,6 +33,13 @@ variable "target_realm_id" {
   default     = "alto"
 }
 
+# CRM Dashboard
+variable "crm_dashboard_url" {
+  description = "CRM Dashboard URL for OAuth redirects"
+  type        = string
+  default     = "http://localhost:3000"
+}
+
 # SMTP Configuration (from setup.md)
 variable "smtp_host" {
   description = "SMTP server hostname"

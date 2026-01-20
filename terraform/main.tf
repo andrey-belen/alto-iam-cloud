@@ -22,7 +22,39 @@ provider "keycloak" {
   password  = var.keycloak_admin_password
 }
 
+# ============================================================================
+# CRM Dashboard Client in Master Realm
+# ============================================================================
+
+resource "keycloak_openid_client" "alto_crm" {
+  realm_id                     = "master"
+  client_id                    = "alto-crm"
+  name                         = "Alto CRM Dashboard"
+  enabled                      = true
+  access_type                  = "PUBLIC"
+  standard_flow_enabled        = true
+  implicit_flow_enabled        = false
+  direct_access_grants_enabled = false
+
+  valid_redirect_uris = [
+    "http://localhost:3000/*",
+    "https://localhost:3000/*",
+    "${var.crm_dashboard_url}/*"
+  ]
+
+  web_origins = [
+    "http://localhost:3000",
+    "https://localhost:3000",
+    var.crm_dashboard_url
+  ]
+
+  login_theme = "keycloak"
+}
+
+# ============================================================================
 # MFA Email OTP Module instantiation for test realm
+# ============================================================================
+
 module "mfa_email_otp" {
   source = "./modules/mfa-email-otp"
 
