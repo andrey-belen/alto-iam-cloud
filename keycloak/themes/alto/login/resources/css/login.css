@@ -1,0 +1,1096 @@
+/**
+ * Alto CERO Keycloak Theme - Industrial Precision
+ * Beautiful, refined design for building automation platform
+ */
+
+/* ============================================
+   CRITICAL: Override PatternFly - targeted approach
+   ============================================ */
+
+/* Remove PatternFly backgrounds and layouts */
+html.login-pf {
+  background: none !important;
+}
+
+html.login-pf body {
+  background: none !important;
+  min-height: 100vh !important;
+}
+
+.login-pf-page {
+  background: none !important;
+  min-height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Hide ALL Keycloak/PatternFly default elements */
+#kc-header,
+#kc-header-wrapper,
+.kc-logo-text,
+.login-pf-header,
+#kc-locale,
+#kc-footer,
+.pf-c-brand,
+.pf-c-page__header,
+.login-pf-page-header {
+  display: none !important;
+}
+
+/* Remove card-pf default styling */
+.card-pf {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+:root {
+  /* Slate palette */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Accent colors */
+  --cyan-400: #22d3ee;
+  --cyan-500: #06b6d4;
+  --cyan-600: #0891b2;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+
+  /* Semantic colors */
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-600: #d97706;
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-600: #16a34a;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--slate-50);
+  color: var(--slate-900);
+  line-height: 1.5;
+}
+
+/* ============================================
+   Main Layout
+   ============================================ */
+.alto-login-container {
+  display: flex !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  flex-direction: row !important;
+}
+
+/* ============================================
+   Left Panel - Branding
+   ============================================ */
+.alto-brand-panel {
+  display: none !important;
+  position: relative !important;
+  width: 55% !important;
+  flex-shrink: 0 !important;
+  background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 50%, var(--slate-900) 100%) !important;
+  overflow: hidden !important;
+}
+
+@media (min-width: 1024px) {
+  .alto-brand-panel {
+    display: flex !important;
+  }
+}
+
+/* Animated gradient orbs */
+.alto-gradient-orbs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.alto-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.alto-orb-1 {
+  top: -10rem;
+  left: -10rem;
+  width: 24rem;
+  height: 24rem;
+  background: rgba(6, 182, 212, 0.2);
+  animation-duration: 4s;
+}
+
+.alto-orb-2 {
+  top: 50%;
+  right: -5rem;
+  width: 20rem;
+  height: 20rem;
+  background: rgba(20, 184, 166, 0.15);
+  animation-duration: 6s;
+  animation-delay: 1s;
+}
+
+.alto-orb-3 {
+  bottom: -5rem;
+  left: 33%;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(34, 211, 238, 0.1);
+  animation-duration: 5s;
+  animation-delay: 2s;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* Grid pattern */
+.alto-grid-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+/* Brand content */
+.alto-brand-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3rem 4rem;
+  width: 100%;
+  height: 100%;
+}
+
+/* Logo header */
+.alto-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+
+.alto-logo-box {
+  width: 3.5rem;
+  height: 3.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alto-logo {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.alto-brand-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Brand title */
+.alto-brand-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+.alto-brand-title-gradient {
+  display: block;
+  background: linear-gradient(135deg, var(--cyan-400) 0%, var(--teal-400) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.alto-brand-description {
+  color: var(--slate-400);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  max-width: 28rem;
+}
+
+/* Feature cards */
+.alto-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.alto-feature-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.alto-feature-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.alto-feature-icon {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+  max-width: 2.5rem !important;
+  max-height: 2.5rem !important;
+  border-radius: 0.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 1rem !important;
+  transition: background 0.3s ease;
+  overflow: hidden !important;
+}
+
+.alto-feature-icon svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  max-width: 1.25rem !important;
+  max-height: 1.25rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Force all SVGs in our template to have reasonable sizes */
+.alto-login-container svg {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.alto-brand-panel svg {
+  max-width: 2rem !important;
+  max-height: 2rem !important;
+}
+
+.alto-feature-icon-cyan {
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--cyan-400);
+}
+
+.alto-feature-card:hover .alto-feature-icon-cyan {
+  background: rgba(6, 182, 212, 0.2);
+}
+
+.alto-feature-icon-teal {
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--teal-400);
+}
+
+.alto-feature-card:hover .alto-feature-icon-teal {
+  background: rgba(20, 184, 166, 0.2);
+}
+
+.alto-feature-card h3 {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.alto-feature-card p {
+  color: var(--slate-500);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Brand footer */
+.alto-brand-footer {
+  color: var(--slate-600);
+  font-size: 0.875rem;
+}
+
+/* ============================================
+   Right Panel - Form
+   ============================================ */
+.alto-form-panel {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.5rem !important;
+  background: var(--slate-50) !important;
+  flex-shrink: 0 !important;
+}
+
+@media (min-width: 1024px) {
+  .alto-form-panel {
+    width: 45% !important;
+    padding: 3rem !important;
+  }
+}
+
+.alto-form-container {
+  width: 100% !important;
+  max-width: 28rem !important;
+}
+
+/* Mobile logo */
+.alto-mobile-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .alto-mobile-logo {
+    display: none;
+  }
+}
+
+.alto-mobile-logo-box {
+  width: 3rem;
+  height: 3rem;
+  background: var(--slate-900);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alto-mobile-logo-box img {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.alto-mobile-logo span {
+  color: var(--slate-900);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Form card */
+.alto-form-card {
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--slate-100);
+  padding: 2rem 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .alto-form-card {
+    padding: 2.5rem;
+  }
+}
+
+/* Form header */
+.alto-form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.alto-form-header h1,
+#kc-page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--slate-900);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .alto-form-header h1,
+  #kc-page-title {
+    font-size: 2rem;
+  }
+}
+
+/* Subtitle text after header */
+.alto-form-subtitle {
+  color: var(--slate-500);
+  font-size: 1rem;
+}
+
+/* Logged in as section */
+.alto-logged-in-as {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--slate-50);
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.alto-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--slate-200);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate-500);
+}
+
+.alto-avatar svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.alto-user-info {
+  flex: 1;
+}
+
+.alto-user-name {
+  display: block;
+  font-weight: 600;
+  color: var(--slate-900);
+  font-size: 0.875rem;
+}
+
+.alto-change-user {
+  color: var(--cyan-600);
+  font-size: 0.75rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.alto-change-user:hover {
+  color: var(--cyan-500);
+  text-decoration: underline;
+}
+
+/* ============================================
+   Alerts
+   ============================================ */
+.alto-alert,
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.alto-alert svg,
+.alert svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.alto-alert-error,
+.alert-error {
+  background: var(--red-50);
+  border: 1px solid var(--red-100);
+  color: var(--red-600);
+}
+
+.alto-alert-warning,
+.alert-warning {
+  background: var(--amber-50);
+  border: 1px solid var(--amber-100);
+  color: var(--amber-600);
+}
+
+.alto-alert-success,
+.alert-success {
+  background: var(--green-50);
+  border: 1px solid var(--green-100);
+  color: var(--green-600);
+}
+
+.alto-alert-info,
+.alert-info {
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  color: var(--slate-600);
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+.form-group,
+.alto-form-group {
+  margin-bottom: 1.25rem;
+}
+
+label,
+.control-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--slate-700);
+  margin-bottom: 0.5rem;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+.form-control,
+#username,
+#password,
+#code {
+  width: 100% !important;
+  padding: 0.875rem 1rem !important;
+  padding-left: 1rem !important;
+  font-size: 1rem !important;
+  color: var(--slate-900) !important;
+  background: var(--slate-50) !important;
+  border: 1px solid var(--slate-200) !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  text-indent: 0 !important;
+}
+
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="email"]:hover,
+.form-control:hover {
+  border-color: var(--slate-300);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+.form-control:focus {
+  background: white;
+  border-color: var(--cyan-500);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+}
+
+input::placeholder {
+  color: var(--slate-400);
+}
+
+/* Error state */
+input.error,
+input[aria-invalid="true"] {
+  border-color: var(--red-500);
+  background: var(--red-50);
+}
+
+input.error:focus,
+input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Input error message */
+.kc-feedback-text,
+#input-error {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--red-600);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn-primary,
+.alto-btn-primary,
+input[type="submit"],
+#kc-login {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background: var(--slate-900);
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-primary:hover,
+.alto-btn-primary:hover,
+input[type="submit"]:hover,
+#kc-login:hover {
+  background: var(--slate-800);
+}
+
+.btn-primary:focus,
+.alto-btn-primary:focus,
+input[type="submit"]:focus,
+#kc-login:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
+}
+
+.btn-primary:disabled,
+.alto-btn-primary:disabled,
+input[type="submit"]:disabled,
+#kc-login:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary button */
+.btn-secondary,
+.alto-btn-secondary {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--slate-700);
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  text-align: center;
+  display: inline-block;
+}
+
+.btn-secondary:hover,
+.alto-btn-secondary:hover {
+  background: var(--slate-50);
+  border-color: var(--slate-300);
+  color: var(--slate-900);
+  text-decoration: none;
+}
+
+/* ============================================
+   Checkbox & Remember Me
+   ============================================ */
+#kc-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+}
+
+.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--slate-600);
+  cursor: pointer;
+  font-weight: normal;
+  margin: 0;
+}
+
+.checkbox input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--slate-300);
+  cursor: pointer;
+  accent-color: var(--cyan-500);
+}
+
+/* Forgot password link */
+#kc-form-options a {
+  color: var(--cyan-600);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+#kc-form-options a:hover {
+  color: var(--cyan-500);
+  text-decoration: underline;
+}
+
+/* ============================================
+   Registration / Info Section
+   ============================================ */
+.alto-form-info,
+#kc-registration {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--slate-100);
+  text-align: center;
+}
+
+.alto-form-info p,
+#kc-registration span {
+  color: var(--slate-500);
+  font-size: 0.875rem;
+}
+
+.alto-form-info a,
+#kc-registration a {
+  color: var(--cyan-600);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.alto-form-info a:hover,
+#kc-registration a:hover {
+  color: var(--cyan-500);
+  text-decoration: underline;
+}
+
+/* Divider */
+.alto-divider,
+.kc-registration-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: var(--slate-400);
+  font-size: 0.8rem;
+}
+
+.alto-divider::before,
+.alto-divider::after,
+.kc-registration-divider::before,
+.kc-registration-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.alto-divider span,
+.kc-registration-divider span {
+  padding: 0 1rem;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Social Providers
+   ============================================ */
+.alto-social-providers {
+  margin-top: 1.5rem;
+}
+
+.alto-social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alto-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  color: var(--slate-700);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.alto-social-btn:hover {
+  background: var(--slate-50);
+  border-color: var(--slate-300);
+  text-decoration: none;
+}
+
+/* ============================================
+   Mobile Footer
+   ============================================ */
+.alto-mobile-footer {
+  display: block;
+  text-align: center;
+  color: var(--slate-400);
+  font-size: 0.8rem;
+  margin-top: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .alto-mobile-footer {
+    display: none;
+  }
+}
+
+/* ============================================
+   OTP / Verification Code Styles
+   ============================================ */
+.otp-form-page .alto-form-header h1 {
+  font-size: 1.5rem;
+}
+
+.otp-email-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(20, 184, 166, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.otp-email-icon svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--cyan-500);
+}
+
+.otp-description {
+  text-align: center;
+  color: var(--slate-500);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.otp-description strong {
+  color: var(--slate-700);
+}
+
+/* OTP Input */
+.otp-input-container {
+  margin: 1.5rem 0;
+}
+
+input#otp,
+input[name="otp"],
+.otp-input {
+  width: 100% !important;
+  text-align: center !important;
+  letter-spacing: 0.75rem !important;
+  font-size: 1.75rem !important;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace !important;
+  font-weight: 600 !important;
+  padding: 1.25rem 1rem !important;
+  border: 2px solid var(--slate-200) !important;
+  border-radius: 0.75rem !important;
+  background: var(--slate-50) !important;
+  color: var(--slate-900) !important;
+}
+
+input#otp:focus,
+input[name="otp"]:focus,
+.otp-input:focus {
+  border-color: var(--cyan-500) !important;
+  background: white !important;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15) !important;
+}
+
+input#otp::placeholder,
+input[name="otp"]::placeholder,
+.otp-input::placeholder {
+  color: var(--slate-300) !important;
+  letter-spacing: 0.5rem !important;
+}
+
+/* OTP Submit button with gradient */
+.otp-buttons input[type="submit"],
+.otp-form-page input[type="submit"] {
+  background: linear-gradient(135deg, var(--cyan-500) 0%, var(--teal-500) 100%) !important;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.25);
+}
+
+.otp-buttons input[type="submit"]:hover,
+.otp-form-page input[type="submit"]:hover {
+  background: linear-gradient(135deg, var(--cyan-600) 0%, var(--teal-400) 100%) !important;
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Resend link */
+.otp-resend-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--slate-100);
+}
+
+.otp-resend-link p {
+  color: var(--slate-500);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.otp-resend-link a,
+.otp-resend-btn {
+  color: var(--cyan-600);
+  font-weight: 500;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  font-family: inherit;
+}
+
+.otp-resend-link a:hover,
+.otp-resend-btn:hover {
+  color: var(--cyan-500);
+  text-decoration: underline;
+}
+
+/* Timer */
+.otp-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  color: var(--slate-400);
+  font-size: 0.8rem;
+}
+
+.otp-timer svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ============================================
+   Hide Keycloak default elements
+   ============================================ */
+#kc-header,
+#kc-header-wrapper,
+.kc-logo-text,
+#kc-footer {
+  display: none !important;
+}
+
+/* Hide extra elements we don't need */
+.login-pf-page-header,
+.card-pf {
+  all: unset;
+}
+
+/* ============================================
+   Required Fields
+   ============================================ */
+.alto-required-fields {
+  margin-bottom: 1rem;
+}
+
+.alto-required-label {
+  color: var(--slate-500);
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+a {
+  color: var(--cyan-600);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--cyan-500);
+  text-decoration: underline;
+}
+
+/* ============================================
+   Responsive adjustments
+   ============================================ */
+@media (max-width: 640px) {
+  .alto-form-card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
+
+  .alto-form-header h1,
+  #kc-page-title {
+    font-size: 1.5rem;
+  }
+
+  input#otp,
+  input[name="otp"],
+  .otp-input {
+    font-size: 1.5rem !important;
+    letter-spacing: 0.5rem !important;
+  }
+}
+
+/* ============================================
+   Fix for Keycloak button classes
+   ============================================ */
+.btn,
+.btn-lg,
+.btn-block {
+  all: unset;
+  display: block;
+  width: 100%;
+}
+
+#kc-form-buttons {
+  margin-top: 1.5rem;
+}
+
+/* ============================================
+   Register page specific
+   ============================================ */
+#kc-register-form .form-group {
+  margin-bottom: 1rem;
+}
