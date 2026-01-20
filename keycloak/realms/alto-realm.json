@@ -1,5 +1,4 @@
 {
-  "_comment": "AICODE-NOTE: Alto test realm configuration for MFA Email OTP. Import on Keycloak startup.",
   "realm": "alto",
   "enabled": true,
   "displayName": "Alto",
