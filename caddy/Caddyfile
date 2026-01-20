@@ -1,0 +1,19 @@
+# Caddy reverse proxy for Alto IAM
+# Uses self-signed cert for IP-based access
+
+:443 {
+    # Use internal/self-signed certificate (for IP access)
+    tls internal
+
+    # Keycloak - main path
+    reverse_proxy keycloak:8080
+
+    # Headers for Keycloak proxy
+    header_up X-Forwarded-Proto https
+    header_up X-Forwarded-Port 443
+}
+
+# Redirect HTTP to HTTPS
+:80 {
+    redir https://{host}{uri} permanent
+}
