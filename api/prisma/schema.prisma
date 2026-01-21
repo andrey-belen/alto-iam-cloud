@@ -44,6 +44,29 @@ enum AccessRequestStatus {
 }
 
 // ============================================================================
+// User Site Access Model
+// ============================================================================
+// AICODE-NOTE: Maps Keycloak users to specific properties they can access
+// This is more granular than client_prefix - a marriott-admin might only
+// have access to marriott-hk and marriott-sg, not marriott-tokyo
+
+model UserSiteAccess {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  userEmail  String    @map("user_email")
+  propertyId String    @map("property_id")
+  grantedBy  String    @map("granted_by")
+  grantedAt  DateTime  @default(now()) @map("granted_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+  @@index([userEmail])
+  @@map("user_site_access")
+}
+
+// ============================================================================
 // Audit Log Model (optional - for tracking admin actions)
 // ============================================================================
 

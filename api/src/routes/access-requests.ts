@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { requireSuperAdmin } from '../middleware/client-access.js';
 import { emailService } from '../services/email.service.js';
 import { keycloakAdmin } from '../services/keycloak-admin.service.js';
 import { logger } from '../lib/logger.js';
@@ -9,6 +10,7 @@ import { AccessRequestStatus } from '@prisma/client';
 
 // AICODE-NOTE: Access requests CRUD routes
 // Public route for submitting, authenticated routes for management
+// Protected routes require super admin (client_prefix = "*") - clients cannot access
 
 const router = Router();
 
@@ -88,13 +90,14 @@ router.post(
 );
 
 // ============================================================================
-// Protected Routes
+// Protected Routes - ALTO ADMINS ONLY (client_prefix = "*")
 // ============================================================================
 
-// Get all access requests (with filtering)
+// Get all access requests (with filtering) - ALTO ADMIN ONLY
 router.get(
   '/',
   authMiddleware,
+  requireSuperAdmin,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const query = GetAccessRequestsSchema.parse(req.query);
@@ -135,10 +138,11 @@ router.get(
   }
 );
 
-// Get access request stats
+// Get access request stats - ALTO ADMIN ONLY
 router.get(
   '/stats',
   authMiddleware,
+  requireSuperAdmin,
   async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const [pending, approved, rejected, total] = await Promise.all([
@@ -155,10 +159,11 @@ router.get(
   }
 );
 
-// Get single access request
+// Get single access request - ALTO ADMIN ONLY
 router.get(
   '/:id',
   authMiddleware,
+  requireSuperAdmin,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
@@ -178,10 +183,11 @@ router.get(
   }
 );
 
-// Approve access request
+// Approve access request - ALTO ADMIN ONLY
 router.post(
   '/:id/approve',
   authMiddleware,
+  requireSuperAdmin,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
@@ -199,9 +205,9 @@ router.post(
         return;
       }
 
-      // Create user in Keycloak
+      // Create user in Keycloak and send password reset email
       try {
-        await keycloakAdmin.createUser(request.propertyId, {
+        const userId = await keycloakAdmin.createUser(request.propertyId, {
           username: request.email,
           email: request.email,
           firstName: request.firstName,
@@ -211,7 +217,12 @@ router.post(
         });
 
         // Send password reset email so user can set their password
-        // Note: This requires the user ID, which we'd need to look up
+        await keycloakAdmin.sendPasswordResetEmail(request.propertyId, userId);
+
+        logger.info(
+          { requestId: request.id, userId, propertyId: request.propertyId },
+          'User created and password reset email sent'
+        );
       } catch (error) {
         logger.error({ error, requestId: request.id }, 'Failed to create Keycloak user');
         res.status(500).json({ error: 'Failed to create user account' });
@@ -247,10 +258,11 @@ router.post(
   }
 );
 
-// Reject access request
+// Reject access request - ALTO ADMIN ONLY
 router.post(
   '/:id/reject',
   authMiddleware,
+  requireSuperAdmin,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
@@ -300,10 +312,11 @@ router.post(
   }
 );
 
-// Delete access request
+// Delete access request - ALTO ADMIN ONLY
 router.delete(
   '/:id',
   authMiddleware,
+  requireSuperAdmin,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;

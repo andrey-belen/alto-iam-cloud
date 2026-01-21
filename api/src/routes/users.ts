@@ -1,15 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth.js';
+import { requirePropertyAccess } from '../middleware/client-access.js';
 import { keycloakAdmin } from '../services/keycloak-admin.service.js';
 import { logger } from '../lib/logger.js';
 
 // AICODE-NOTE: User management routes - wraps Keycloak user operations
 // Nested under /properties/:propertyId/users
+// All routes check client_prefix against propertyId for access control
 
 const router = Router();
 
-// All routes require authentication
+// All routes require authentication and property access check
 router.use(authMiddleware);
 
 // ============================================================================
@@ -47,9 +49,10 @@ const ResetPasswordSchema = z.object({
 // Routes
 // ============================================================================
 
-// Get users for a property
+// Get users for a property - with access check
 router.get(
   '/:propertyId/users',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -83,9 +86,10 @@ router.get(
   }
 );
 
-// Get single user
+// Get single user - with access check
 router.get(
   '/:propertyId/users/:userId',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -110,9 +114,10 @@ router.get(
   }
 );
 
-// Create user
+// Create user - with access check
 router.post(
   '/:propertyId/users',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -151,9 +156,10 @@ router.post(
   }
 );
 
-// Update user
+// Update user - with access check
 router.put(
   '/:propertyId/users/:userId',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -184,9 +190,10 @@ router.put(
   }
 );
 
-// Delete user
+// Delete user - with access check
 router.delete(
   '/:propertyId/users/:userId',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -206,9 +213,10 @@ router.delete(
   }
 );
 
-// Enable user
+// Enable user - with access check
 router.post(
   '/:propertyId/users/:userId/enable',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -238,9 +246,10 @@ router.post(
   }
 );
 
-// Disable user
+// Disable user - with access check
 router.post(
   '/:propertyId/users/:userId/disable',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -270,9 +279,10 @@ router.post(
   }
 );
 
-// Reset user password
+// Reset user password - with access check
 router.post(
   '/:propertyId/users/:userId/reset-password',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -298,9 +308,10 @@ router.post(
   }
 );
 
-// Send password reset email
+// Send password reset email - with access check
 router.post(
   '/:propertyId/users/:userId/send-password-reset',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;

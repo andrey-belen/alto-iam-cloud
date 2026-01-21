@@ -32,6 +32,7 @@ export interface Property {
   displayName?: string;
   enabled: boolean;
   userCount?: number;
+  sessionCount?: number;
   createdAt?: string;
 }
 
@@ -88,6 +89,20 @@ export interface PaginatedResponse<T> {
 }
 
 // ============================================================================
+// Site Access Types
+// ============================================================================
+
+export interface UserSiteAccess {
+  id: string;
+  userId: string;
+  userEmail: string;
+  propertyId: string;
+  grantedBy: string;
+  grantedAt: string;
+  revokedAt?: string;
+}
+
+// ============================================================================
 // Auth Types
 // ============================================================================
 
@@ -98,6 +113,10 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   roles: string[];
+  // AICODE-NOTE: client_prefix determines realm visibility
+  // "*" = super admin (Alto operator) - sees all realms
+  // "marriott" = client admin - sees only marriott-* realms
+  clientPrefix?: string;
 }
 
 export interface AuthState {

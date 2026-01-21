@@ -13,6 +13,7 @@ const keycloakConfig = {
 
 // Singleton Keycloak instance
 let keycloakInstance: Keycloak | null = null;
+let initPromise: Promise<boolean> | null = null;
 
 export function getKeycloakInstance(): Keycloak {
   if (!keycloakInstance) {
@@ -21,38 +22,78 @@ export function getKeycloakInstance(): Keycloak {
   return keycloakInstance;
 }
 
+// AICODE-NOTE: Check for auth callback in URL fragment (Keycloak uses response_mode=fragment)
+export function hasAuthCallback(): boolean {
+  const hash = window.location.hash;
+  return hash.includes('code=') && hash.includes('state=');
+}
+
 export async function initKeycloak(): Promise<boolean> {
-  const keycloak = getKeycloakInstance();
-
-  try {
-    const authenticated = await keycloak.init({
-      onLoad: 'check-sso',
-      silentCheckSsoRedirectUri:
-        window.location.origin + '/silent-check-sso.html',
-      pkceMethod: 'S256',
-    });
-
-    // Setup token refresh
-    if (authenticated) {
-      setupTokenRefresh(keycloak);
-    }
-
-    return authenticated;
-  } catch (error) {
-    console.error('Keycloak initialization failed:', error);
-    return false;
+  // Prevent double initialization (React Strict Mode calls effects twice)
+  if (initPromise) {
+    console.log('Keycloak init already in progress, returning existing promise');
+    return initPromise;
   }
+
+  const keycloak = getKeycloakInstance();
+  const authCallback = hasAuthCallback();
+
+  console.log('Keycloak init starting...', {
+    url: keycloakConfig.url,
+    realm: keycloakConfig.realm,
+    clientId: keycloakConfig.clientId,
+    currentUrl: window.location.href,
+    hasAuthCallback: authCallback,
+  });
+
+  initPromise = (async () => {
+    try {
+      // AICODE-NOTE: keycloak-js will automatically process auth code from URL fragment
+      const authenticated = await keycloak.init({
+        pkceMethod: 'S256',
+        checkLoginIframe: false,
+      });
+
+      console.log('Keycloak init result:', {
+        authenticated,
+        keycloakAuthenticated: keycloak.authenticated,
+        token: keycloak.token ? 'present' : 'missing',
+        subject: keycloak.subject,
+      });
+
+      // Clean up URL after processing auth code
+      if (authCallback && authenticated) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // Setup token refresh
+      if (authenticated) {
+        setupTokenRefresh(keycloak);
+      }
+
+      return authenticated;
+    } catch (error) {
+      console.error('Keycloak initialization failed:', error);
+      initPromise = null; // Reset so it can be retried
+      return false;
+    }
+  })();
+
+  return initPromise;
 }
 
 export function login(): void {
   const keycloak = getKeycloakInstance();
-  keycloak.login();
+  // AICODE-NOTE: Explicitly set redirectUri to ensure we return to CRM after login
+  keycloak.login({
+    redirectUri: window.location.origin + '/',
+  });
 }
 
 export function logout(): void {
   const keycloak = getKeycloakInstance();
   keycloak.logout({
-    redirectUri: window.location.origin + '/login',
+    redirectUri: window.location.origin,
   });
 }
 
@@ -88,6 +129,7 @@ export function getUserFromKeycloak(): AuthUser | null {
     family_name?: string;
     realm_access?: { roles?: string[] };
     resource_access?: Record<string, { roles?: string[] }>;
+    client_prefix?: string | string[];
   };
 
   // Extract roles from both realm and resource access
@@ -96,6 +138,16 @@ export function getUserFromKeycloak(): AuthUser | null {
     tokenParsed.resource_access?.[keycloakConfig.clientId]?.roles || [];
   const roles = [...new Set([...realmRoles, ...clientRoles])];
 
+  // AICODE-NOTE: Extract client_prefix for realm filtering
+  // "*" means super admin (Alto operator) - can see all realms
+  // "marriott" means client admin - can only see marriott-* realms
+  let clientPrefix: string | undefined;
+  if (tokenParsed.client_prefix) {
+    clientPrefix = Array.isArray(tokenParsed.client_prefix)
+      ? tokenParsed.client_prefix[0]
+      : tokenParsed.client_prefix;
+  }
+
   return {
     id: tokenParsed.sub || '',
     username: tokenParsed.preferred_username || '',
@@ -103,6 +155,7 @@ export function getUserFromKeycloak(): AuthUser | null {
     firstName: tokenParsed.given_name,
     lastName: tokenParsed.family_name,
     roles,
+    clientPrefix,
   };
 }
 

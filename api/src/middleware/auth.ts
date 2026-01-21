@@ -5,6 +5,7 @@ import { logger } from '../lib/logger.js';
 
 // AICODE-NOTE: JWT authentication middleware using Keycloak JWKS
 // Validates bearer tokens and extracts user info from Keycloak
+// client_prefix used for client isolation: "*" = super admin, "marriott" = client prefix
 
 export interface AuthUser {
   id: string;
@@ -13,6 +14,7 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   roles: string[];
+  clientPrefix: string; // "*" = super admin (Alto operator), "marriott" = client admin
 }
 
 declare global {
@@ -56,6 +58,7 @@ interface KeycloakTokenPayload {
   family_name?: string;
   realm_access?: { roles?: string[] };
   resource_access?: Record<string, { roles?: string[] }>;
+  client_prefix?: string | string[]; // For client isolation filtering
 }
 
 export async function authMiddleware(
@@ -89,6 +92,17 @@ export async function authMiddleware(
     const clientRoles = decoded.resource_access?.[clientId]?.roles || [];
     const roles = [...new Set([...realmRoles, ...clientRoles])];
 
+    // AICODE-NOTE: Extract client_prefix for realm filtering
+    // "*" = super admin (Alto operator) - sees all realms
+    // "marriott" = client admin - sees only marriott-* realms
+    // Default to "*" if missing for backwards compatibility
+    let clientPrefix = '*';
+    if (decoded.client_prefix) {
+      clientPrefix = Array.isArray(decoded.client_prefix)
+        ? decoded.client_prefix[0]
+        : decoded.client_prefix;
+    }
+
     req.user = {
       id: decoded.sub,
       username: decoded.preferred_username || '',
@@ -96,6 +110,7 @@ export async function authMiddleware(
       firstName: decoded.given_name,
       lastName: decoded.family_name,
       roles,
+      clientPrefix,
     };
 
     next();

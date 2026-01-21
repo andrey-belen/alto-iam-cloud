@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import accessRequestsRouter from './routes/access-requests.js';
 import propertiesRouter from './routes/properties.js';
 import usersRouter from './routes/users.js';
+import siteAccessRouter from './routes/site-access.js';
 import publicRouter from './routes/public.js';
 import healthRouter from './routes/health.js';
 
@@ -58,6 +59,7 @@ app.use('/api/public', publicRouter);
 // Protected routes
 app.use('/api/access-requests', accessRequestsRouter);
 app.use('/api/properties', propertiesRouter);
+app.use('/api/site-access', siteAccessRouter);
 
 // Nested user routes under properties
 app.use('/api/properties', usersRouter);

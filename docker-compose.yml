@@ -198,12 +198,13 @@ services:
 
   # ============================================================================
   # API Development Server (hot reload)
+  # AICODE-NOTE: Using full node:20 image for Prisma/OpenSSL compatibility
   # ============================================================================
   api-dev:
-    image: node:20-alpine
+    image: node:20
     container_name: alto-api-dev
     working_dir: /app
-    command: sh -c "npm install && npx prisma generate && npx prisma db push && npm run dev"
+    command: bash -c "npm install && npx prisma generate && npx prisma db push && npm run dev"
     environment:
       NODE_ENV: development
       PORT: 3001
@@ -220,8 +221,8 @@ services:
       KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-admin-cli}
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
 
-      # CORS
-      CORS_ORIGIN: http://localhost:3000
+      # CORS - allow local and Cloudflare domains
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
 
       # SMTP (MailHog)
       SMTP_ENABLED: "true"
@@ -230,7 +231,7 @@ services:
       SMTP_FROM: noreply@alto.com
 
       # Dashboard URL
-      DASHBOARD_URL: http://localhost:3000
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
     ports:
       - "${API_PORT:-3001}:3001"
     volumes:

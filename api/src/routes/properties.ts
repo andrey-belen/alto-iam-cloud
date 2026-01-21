@@ -1,10 +1,15 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth.js';
+import {
+  filterPropertiesByClient,
+  requirePropertyAccess,
+} from '../middleware/client-access.js';
 import { keycloakAdmin } from '../services/keycloak-admin.service.js';
 import { logger } from '../lib/logger.js';
 
 // AICODE-NOTE: Properties routes - wraps Keycloak realms as "properties"
+// Filtered by client_prefix for multi-tenant isolation
 
 const router = Router();
 
@@ -24,35 +29,41 @@ const GetPropertiesSchema = z.object({
 // Routes
 // ============================================================================
 
-// Get all properties (realms)
+// Get all properties (realms) - filtered by client_prefix
 router.get(
   '/',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const query = GetPropertiesSchema.parse(req.query);
+      const clientPrefix = req.user?.clientPrefix || '*';
 
       const realms = await keycloakAdmin.getRealms();
 
-      // Filter out master realm and map to property format
-      const properties = await Promise.all(
-        realms
-          .filter((realm) => realm.realm !== 'master')
-          .map(async (realm) => {
-            let userCount = 0;
-            try {
-              userCount = await keycloakAdmin.getRealmUserCount(realm.realm);
-            } catch (error) {
-              logger.warn({ realm: realm.realm }, 'Failed to get user count');
-            }
+      // AICODE-NOTE: Filter realms by client_prefix for client isolation
+      // Super admin (*) sees all, client admin sees only their prefix (e.g., marriott-*)
+      const filteredRealms = filterPropertiesByClient(
+        realms.filter((realm) => realm.realm !== 'master'),
+        clientPrefix
+      );
 
-            return {
-              id: realm.realm,
-              realm: realm.realm,
-              displayName: realm.displayName,
-              enabled: realm.enabled,
-              userCount,
-            };
-          })
+      // Map to property format with user counts
+      const properties = await Promise.all(
+        filteredRealms.map(async (realm) => {
+          let userCount = 0;
+          try {
+            userCount = await keycloakAdmin.getRealmUserCount(realm.realm);
+          } catch (error) {
+            logger.warn({ realm: realm.realm }, 'Failed to get user count');
+          }
+
+          return {
+            id: realm.realm,
+            realm: realm.realm,
+            displayName: realm.displayName,
+            enabled: realm.enabled,
+            userCount,
+          };
+        })
       );
 
       // Apply pagination
@@ -72,9 +83,10 @@ router.get(
   }
 );
 
-// Get single property
+// Get single property - with access check
 router.get(
   '/:propertyId',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;
@@ -101,9 +113,10 @@ router.get(
   }
 );
 
-// Get property stats
+// Get property stats - with access check
 router.get(
   '/:propertyId/stats',
+  requirePropertyAccess('propertyId'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const propertyId = req.params.propertyId as string;

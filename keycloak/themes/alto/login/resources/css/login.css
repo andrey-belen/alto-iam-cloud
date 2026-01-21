@@ -1,6 +1,6 @@
 /**
- * Alto CERO Keycloak Theme - Industrial Precision
- * Beautiful, refined design for building automation platform
+ * Alto Cloud IAM Keycloak Theme - Purple Edition
+ * Distinct cloud identity theme with violet/purple accent colors
  */
 
 /* ============================================
@@ -65,14 +65,14 @@ html.login-pf body {
   --slate-900: #0f172a;
   --slate-950: #020617;
 
-  /* Accent colors */
-  --cyan-400: #22d3ee;
-  --cyan-500: #06b6d4;
-  --cyan-600: #0891b2;
-  --teal-400: #2dd4bf;
-  --teal-500: #14b8a6;
-  --emerald-400: #34d399;
-  --emerald-500: #10b981;
+  /* Accent colors - Purple/Violet for Cloud IAM */
+  --violet-400: #a78bfa;
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
 
   /* Semantic colors */
   --red-50: #fef2f2;
@@ -157,7 +157,7 @@ body {
   left: -10rem;
   width: 24rem;
   height: 24rem;
-  background: rgba(6, 182, 212, 0.2);
+  background: rgba(139, 92, 246, 0.25);
   animation-duration: 4s;
 }
 
@@ -166,7 +166,7 @@ body {
   right: -5rem;
   width: 20rem;
   height: 20rem;
-  background: rgba(20, 184, 166, 0.15);
+  background: rgba(168, 85, 247, 0.2);
   animation-duration: 6s;
   animation-delay: 1s;
 }
@@ -176,7 +176,7 @@ body {
   left: 33%;
   width: 18rem;
   height: 18rem;
-  background: rgba(34, 211, 238, 0.1);
+  background: rgba(167, 139, 250, 0.15);
   animation-duration: 5s;
   animation-delay: 2s;
 }
@@ -255,7 +255,7 @@ body {
 
 .alto-brand-title-gradient {
   display: block;
-  background: linear-gradient(135deg, var(--cyan-400) 0%, var(--teal-400) 100%);
+  background: linear-gradient(135deg, var(--violet-400) 0%, var(--purple-400) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -287,7 +287,7 @@ body {
 
 .alto-feature-card:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(6, 182, 212, 0.3);
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
 .alto-feature-icon {
@@ -325,22 +325,26 @@ body {
   max-height: 2rem !important;
 }
 
-.alto-feature-icon-cyan {
-  background: rgba(6, 182, 212, 0.1);
-  color: var(--cyan-400);
+.alto-feature-icon-cyan,
+.alto-feature-icon-violet {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--violet-400);
 }
 
-.alto-feature-card:hover .alto-feature-icon-cyan {
-  background: rgba(6, 182, 212, 0.2);
+.alto-feature-card:hover .alto-feature-icon-cyan,
+.alto-feature-card:hover .alto-feature-icon-violet {
+  background: rgba(139, 92, 246, 0.2);
 }
 
-.alto-feature-icon-teal {
-  background: rgba(20, 184, 166, 0.1);
-  color: var(--teal-400);
+.alto-feature-icon-teal,
+.alto-feature-icon-purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--purple-400);
 }
 
-.alto-feature-card:hover .alto-feature-icon-teal {
-  background: rgba(20, 184, 166, 0.2);
+.alto-feature-card:hover .alto-feature-icon-teal,
+.alto-feature-card:hover .alto-feature-icon-purple {
+  background: rgba(168, 85, 247, 0.2);
 }
 
 .alto-feature-card h3 {
@@ -508,14 +512,14 @@ body {
 }
 
 .alto-change-user {
-  color: var(--cyan-600);
+  color: var(--violet-600);
   font-size: 0.75rem;
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .alto-change-user:hover {
-  color: var(--cyan-500);
+  color: var(--violet-500);
   text-decoration: underline;
 }
 
@@ -620,8 +624,8 @@ input[type="password"]:focus,
 input[type="email"]:focus,
 .form-control:focus {
   background: white;
-  border-color: var(--cyan-500);
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+  border-color: var(--violet-500);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 
 input::placeholder {
@@ -685,7 +689,7 @@ input[type="submit"]:hover,
 input[type="submit"]:focus,
 #kc-login:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
 }
 
 .btn-primary:disabled,
@@ -749,19 +753,19 @@ input[type="submit"]:disabled,
   border-radius: 0.25rem;
   border: 1px solid var(--slate-300);
   cursor: pointer;
-  accent-color: var(--cyan-500);
+  accent-color: var(--violet-500);
 }
 
 /* Forgot password link */
 #kc-form-options a {
-  color: var(--cyan-600);
+  color: var(--violet-600);
   text-decoration: none;
   font-size: 0.875rem;
   transition: color 0.2s;
 }
 
 #kc-form-options a:hover {
-  color: var(--cyan-500);
+  color: var(--violet-500);
   text-decoration: underline;
 }
 
@@ -784,7 +788,7 @@ input[type="submit"]:disabled,
 
 .alto-form-info a,
 #kc-registration a {
-  color: var(--cyan-600);
+  color: var(--violet-600);
   font-weight: 500;
   text-decoration: none;
   transition: color 0.2s;
@@ -792,7 +796,7 @@ input[type="submit"]:disabled,
 
 .alto-form-info a:hover,
 #kc-registration a:hover {
-  color: var(--cyan-500);
+  color: var(--violet-500);
   text-decoration: underline;
 }
 
@@ -885,7 +889,7 @@ input[type="submit"]:disabled,
   width: 4rem;
   height: 4rem;
   margin: 0 auto 1.5rem;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(20, 184, 166, 0.1));
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -895,7 +899,7 @@ input[type="submit"]:disabled,
 .otp-email-icon svg {
   width: 2rem;
   height: 2rem;
-  color: var(--cyan-500);
+  color: var(--violet-500);
 }
 
 .otp-description {
@@ -934,9 +938,9 @@ input[name="otp"],
 input#otp:focus,
 input[name="otp"]:focus,
 .otp-input:focus {
-  border-color: var(--cyan-500) !important;
+  border-color: var(--violet-500) !important;
   background: white !important;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
 }
 
 input#otp::placeholder,
@@ -949,14 +953,14 @@ input[name="otp"]::placeholder,
 /* OTP Submit button with gradient */
 .otp-buttons input[type="submit"],
 .otp-form-page input[type="submit"] {
-  background: linear-gradient(135deg, var(--cyan-500) 0%, var(--teal-500) 100%) !important;
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.25);
+  background: linear-gradient(135deg, var(--violet-500) 0%, var(--purple-500) 100%) !important;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
 }
 
 .otp-buttons input[type="submit"]:hover,
 .otp-form-page input[type="submit"]:hover {
-  background: linear-gradient(135deg, var(--cyan-600) 0%, var(--teal-400) 100%) !important;
-  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
+  background: linear-gradient(135deg, var(--violet-600) 0%, var(--purple-400) 100%) !important;
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
   transform: translateY(-1px);
 }
 
@@ -976,7 +980,7 @@ input[name="otp"]::placeholder,
 
 .otp-resend-link a,
 .otp-resend-btn {
-  color: var(--cyan-600);
+  color: var(--violet-600);
   font-weight: 500;
   text-decoration: none;
   background: none;
@@ -989,7 +993,7 @@ input[name="otp"]::placeholder,
 
 .otp-resend-link a:hover,
 .otp-resend-btn:hover {
-  color: var(--cyan-500);
+  color: var(--violet-500);
   text-decoration: underline;
 }
 
@@ -1041,13 +1045,13 @@ input[name="otp"]::placeholder,
    Links
    ============================================ */
 a {
-  color: var(--cyan-600);
+  color: var(--violet-600);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: var(--cyan-500);
+  color: var(--violet-500);
   text-decoration: underline;
 }
 

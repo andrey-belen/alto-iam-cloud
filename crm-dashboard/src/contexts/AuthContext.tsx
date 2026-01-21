@@ -23,6 +23,7 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   getAccessToken: () => string | null;
   hasRole: (role: string) => boolean;
+  isSuperAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,12 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('AuthContext: Starting auth initialization...');
       try {
         const authenticated = await initKeycloak();
+        console.log('AuthContext: Keycloak init returned:', authenticated);
 
         if (authenticated) {
           const user = getUserFromKeycloak();
           const token = getToken() || null;
+          console.log('AuthContext: User authenticated:', user?.username, user?.clientPrefix);
 
           setState({
             isAuthenticated: true,
@@ -51,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             token,
           });
         } else {
+          console.log('AuthContext: Not authenticated');
           setState({
             isAuthenticated: false,
             isLoading: false,
@@ -98,12 +103,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [state.user]
   );
 
+  // AICODE-NOTE: Super admin check for client isolation
+  // client_prefix = "*" means Alto operator with access to ALL realms/features
+  const isSuperAdmin = useCallback((): boolean => {
+    return state.user?.clientPrefix === '*';
+  }, [state.user]);
+
   const value: AuthContextType = {
     ...state,
     login,
     logout,
     getAccessToken,
     hasRole,
+    isSuperAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
