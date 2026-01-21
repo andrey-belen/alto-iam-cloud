@@ -92,9 +92,27 @@ export function login(): void {
 
 export function logout(): void {
   const keycloak = getKeycloakInstance();
+  // AICODE-NOTE: Set flag so ProtectedRoute doesn't auto-login after logout
+  sessionStorage.setItem('alto_logged_out', 'true');
   keycloak.logout({
-    redirectUri: window.location.origin,
+    redirectUri: window.location.origin + '/?logged_out=true',
   });
+}
+
+// Check if user just logged out (to prevent auto-login loop)
+export function hasJustLoggedOut(): boolean {
+  const urlParam = new URLSearchParams(window.location.search).get('logged_out');
+  const sessionFlag = sessionStorage.getItem('alto_logged_out');
+  return urlParam === 'true' || sessionFlag === 'true';
+}
+
+// Clear the logout flag (call when user explicitly clicks login)
+export function clearLogoutFlag(): void {
+  sessionStorage.removeItem('alto_logged_out');
+  // Clean up URL
+  if (window.location.search.includes('logged_out')) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 }
 
 export function getToken(): string | undefined {
@@ -188,4 +206,6 @@ export default {
   getToken,
   refreshToken,
   getUserFromKeycloak,
+  hasJustLoggedOut,
+  clearLogoutFlag,
 };
