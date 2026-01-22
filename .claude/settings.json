@@ -1,0 +1,82 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npx:*)",
+      "Bash(pnpm:*)",
+      "Bash(yarn:*)",
+      "Bash(bun:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(tree:*)",
+      "Skill(agent-creator)",
+      "Skill(self-improve)",
+      "Skill(self-commenting)",
+      "Skill(git)",
+      "Skill(feature-analyzer)",
+      "Skill(sequential-thinking)",
+      "Skill(context7)",
+      "Skill(prompt-optimizer)",
+      "Skill(code-analyzer)",
+      "Skill(backend-auth-js)",
+      "Skill(backend-master)",
+      "Skill(backend-passport-js)",
+      "Skill(backend-pino)",
+      "Skill(backend-prisma)",
+      "Skill(backend-trpc)",
+      "Skill(backend-trpc-openapi)",
+      "Skill(backend-vitest)",
+      "Skill(backend-zod)",
+      "Skill(docker-node)",
+      "Skill(frontend-aceternity)",
+      "Skill(frontend-color-system)",
+      "Skill(frontend-debug-linting)",
+      "Skill(frontend-google-fonts)",
+      "Skill(frontend-iconify)",
+      "Skill(frontend-image-generation)",
+      "Skill(frontend-lottie)",
+      "Skill(frontend-magic-ui)",
+      "Skill(frontend-master)",
+      "Skill(frontend-playwright)",
+      "Skill(frontend-rive)",
+      "Skill(frontend-shadcn)",
+      "Skill(frontend-design-review)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./**/credentials.json)",
+      "Read(./**/*_rsa)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1"
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7",
+    "sequential-thinking",
+    "playwright"
+  ],
+  "includeCoAuthoredBy": true
+}
