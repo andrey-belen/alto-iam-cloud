@@ -20,12 +20,11 @@
         header_up X-Forwarded-Port 443
     }
 
-    # API - backend
-    @api {
-        path /api/*
-    }
-    reverse_proxy @api api:3001 {
-        header_up X-Forwarded-Proto https
-        header_up X-Forwarded-Port 443
+    # API - backend (strip /api prefix before forwarding)
+    handle_path /api/* {
+        reverse_proxy api:3001 {
+            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-Port 443
+        }
     }
 }
