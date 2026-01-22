@@ -1,23 +1,15 @@
 import pino from 'pino';
 
 // AICODE-NOTE: Pino logger configuration for Alto API
-// Uses pino-pretty in development for readable logs
+// JSON output in production, pretty output in development (if pino-pretty installed)
 
-const isDev = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const logger = pino({
-  level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
+  level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
 
-  transport: isDev
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
+  // No transport in production - use default JSON output
+  // In dev, pino-pretty can be piped: npm run dev | pino-pretty
 
   redact: {
     paths: [
