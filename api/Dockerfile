@@ -8,6 +8,9 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl
+
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -19,6 +22,9 @@ RUN npm ci --only=production && npm cache clean --force
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl
 
 # Copy package files
 COPY package*.json ./
@@ -41,6 +47,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+
+# Install OpenSSL for Prisma compatibility
+RUN apk add --no-cache openssl
 
 # Security: non-root user
 RUN addgroup -g 1001 -S nodejs && \
