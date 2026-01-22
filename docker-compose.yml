@@ -33,7 +33,7 @@ services:
   # Keycloak Identity Provider (24+)
   # ============================================================================
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
+    image: quay.io/keycloak/keycloak:26.0
     container_name: alto-keycloak
     command:
       - start-dev
@@ -77,17 +77,19 @@ services:
     volumes:
       # Mount Alto theme for MFA customization
       - ./keycloak/themes/alto:/opt/keycloak/themes/alto:ro
+      # Mount email OTP authenticator extension
+      - ./keycloak/providers:/opt/keycloak/providers:ro
       # Realm import directory
       - ./keycloak/realms:/opt/keycloak/data/import:ro
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '200 OK' <&3"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q 'UP'"]
       interval: 10s
       timeout: 10s
       retries: 30
-      start_period: 60s
+      start_period: 120s
     networks:
       - alto-network
 
@@ -248,14 +250,13 @@ services:
       - dev
 
   # ============================================================================
-  # Caddy Reverse Proxy (HTTPS termination)
+  # Caddy Reverse Proxy (HTTP only - Cloudflare handles HTTPS)
   # ============================================================================
   caddy:
     image: caddy:2-alpine
     container_name: alto-caddy
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

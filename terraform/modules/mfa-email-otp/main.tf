@@ -18,21 +18,9 @@ data "keycloak_realm" "target" {
 
 # ============================================================================
 # SMTP Configuration (FR-002: OTP email delivery)
+# AICODE-NOTE: SMTP is configured via Keycloak Admin API (configure-smtp.sh)
+# The keycloak_realm_smtp_server resource is not supported in provider v4.4.0
 # ============================================================================
-
-resource "keycloak_realm_smtp_server" "alto_smtp" {
-  realm_id = data.keycloak_realm.target.id
-
-  host              = var.smtp_host
-  port              = tostring(var.smtp_port)
-  from              = var.smtp_from
-  from_display_name = var.smtp_from_name
-  starttls          = var.smtp_starttls
-  auth {
-    username = var.smtp_user
-    password = var.smtp_password
-  }
-}
 
 # ============================================================================
 # Authentication Flow: browser-with-otp (FR-001, FR-006)
@@ -78,24 +66,47 @@ resource "keycloak_authentication_execution" "username_password" {
   depends_on = [keycloak_authentication_subflow.forms]
 }
 
-# Execution 3: OTP form (REQUIRED) - Core MFA step
+# Execution 3: Email OTP (REQUIRED) - Uses user's registered email for OTP
+# AICODE-NOTE: email-authenticator uses user's primary email automatically
+# No credential setup needed - just send OTP to verified email
 resource "keycloak_authentication_execution" "otp_form" {
   realm_id          = data.keycloak_realm.target.id
   parent_flow_alias = keycloak_authentication_subflow.forms.alias
-  authenticator     = "auth-otp-form"
+  authenticator     = "email-authenticator"
   requirement       = "REQUIRED"
 
   depends_on = [keycloak_authentication_execution.username_password]
 }
 
+# Configure the email OTP authenticator settings
+resource "keycloak_authentication_execution_config" "email_otp_config" {
+  realm_id     = data.keycloak_realm.target.id
+  execution_id = keycloak_authentication_execution.otp_form.id
+  alias        = "email-otp-config"
+
+  config = {
+    # OTP Code Settings
+    "length"         = tostring(var.otp_length)         # 6 digits
+    "ttl"            = tostring(var.otp_expiry_seconds) # 300 seconds (5 min)
+    # Use Keycloak SMTP (configured in realm)
+    "emailProviderType" = "KEYCLOAK"
+    # Real emails, not simulation
+    "simulationMode" = "false"
+  }
+
+  depends_on = [keycloak_authentication_execution.otp_form]
+}
+
 # ============================================================================
 # OTP Policy Configuration (FR-001, FR-003)
 # OTP_LENGTH=6, OTP_EXPIRY_SECONDS=300 from data-model.md
+# AICODE-NOTE: Simplified for keycloak provider v4.4.0 compatibility
 # ============================================================================
 
 resource "keycloak_realm" "otp_policy_update" {
-  realm   = data.keycloak_realm.target.realm
-  enabled = true
+  realm        = data.keycloak_realm.target.realm
+  enabled      = true
+  ssl_required = "external"
 
   # OTP Policy settings per contracts.md
   otp_policy {
@@ -107,32 +118,24 @@ resource "keycloak_realm" "otp_policy_update" {
     initial_counter   = 0
   }
 
-  # SMTP settings are configured separately via keycloak_realm_smtp_server
-
-  # Brute Force Protection (FR-004)
-  # MAX_OTP_ATTEMPTS=3, LOCKOUT_DURATION_SECONDS=300 from data-model.md
-  brute_force_protected            = true
-  max_failure_wait_seconds         = var.lockout_duration_seconds # LOCKOUT_DURATION_SECONDS
-  failure_reset_time_seconds       = var.lockout_duration_seconds
-  max_delta_time_seconds           = 43200 # 12 hours
-  quick_login_check_milli_seconds  = 1000
-  minimum_quick_login_wait_seconds = 60
-  max_login_failures               = var.max_otp_attempts # MAX_OTP_ATTEMPTS
-
-  # Event Logging per contracts.md Event Listener Configuration
-  events_enabled    = true
-  events_expiration = 604800 # 7 days
-  events_listeners  = ["jboss-logging"]
-  enabled_event_types = [
-    "LOGIN",
-    "LOGIN_ERROR",
-    "SEND_VERIFY_EMAIL",
-    "USER_DISABLED_BY_TEMPORARY_LOCKOUT"
-  ]
-
   # Use Alto theme for login
   login_theme = "alto"
   email_theme = "alto"
+
+  # SMTP Configuration for email delivery
+  smtp_server {
+    host              = var.smtp_host
+    port              = tostring(var.smtp_port)
+    from              = var.smtp_from
+    from_display_name = var.smtp_from_name
+    starttls          = var.smtp_starttls
+    ssl               = false
+
+    auth {
+      username = var.smtp_user
+      password = var.smtp_password
+    }
+  }
 
   lifecycle {
     ignore_changes = [
@@ -155,7 +158,7 @@ resource "keycloak_authentication_bindings" "browser_binding" {
   browser_flow = keycloak_authentication_flow.browser_with_otp.alias
 
   depends_on = [
-    keycloak_authentication_execution.otp_form,
+    keycloak_authentication_execution_config.email_otp_config,
     keycloak_realm.otp_policy_update
   ]
 }

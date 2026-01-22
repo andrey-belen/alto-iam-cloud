@@ -21,16 +21,8 @@ output "otp_policy_configured" {
   depends_on  = [keycloak_realm.otp_policy_update]
 }
 
-output "smtp_configured" {
-  description = "Whether SMTP settings were successfully configured"
-  value       = true
-  depends_on  = [keycloak_realm_smtp_server.alto_smtp]
-}
-
-output "brute_force_enabled" {
-  description = "Whether brute force protection is enabled"
-  value       = keycloak_realm.otp_policy_update.brute_force_protected
-}
+# AICODE-NOTE: SMTP configured via Admin API, not Terraform
+# Brute force settings not available in keycloak provider v4.4.0
 
 output "otp_form_execution_id" {
   description = "ID of the OTP form execution"

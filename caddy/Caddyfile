@@ -1,41 +1,7 @@
 # AICODE-NOTE: Caddy reverse proxy for Alto IAM Cloud
-# Routes traffic from Cloudflare to internal services
-# Use with: docker compose --profile full up -d
+# HTTP only - Cloudflare handles HTTPS termination (Flexible SSL mode)
 
-# HTTP handler (Cloudflare forwards here in Flexible SSL mode)
 :80 {
-    # CRM Dashboard - default route (production container serves on port 80)
-    @dashboard {
-        not path /realms/* /admin/* /resources/* /js/* /api/*
-    }
-    reverse_proxy @dashboard crm-dashboard:80 {
-        header_up X-Forwarded-Proto https
-        header_up X-Forwarded-Port 443
-    }
-
-    # Keycloak - auth paths
-    @keycloak {
-        path /realms/* /admin/* /resources/* /js/*
-    }
-    reverse_proxy @keycloak keycloak:8080 {
-        header_up X-Forwarded-Proto https
-        header_up X-Forwarded-Port 443
-    }
-
-    # API - backend
-    @api {
-        path /api/*
-    }
-    reverse_proxy @api api:3001 {
-        header_up X-Forwarded-Proto https
-        header_up X-Forwarded-Port 443
-    }
-}
-
-# HTTPS handler (for Cloudflare Full SSL mode)
-:443 {
-    tls internal
-
     # CRM Dashboard - default route
     @dashboard {
         not path /realms/* /admin/* /resources/* /js/* /api/*

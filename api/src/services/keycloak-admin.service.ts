@@ -264,6 +264,29 @@ class KeycloakAdminService {
       }
     );
   }
+
+  // AICODE-FIX: Keycloak Admin REST API does NOT support creating custom
+  // credential types like 'email-authenticator'. POST to /credentials returns 404.
+  // The credential can only be created by the authenticator SPI itself.
+  //
+  // Current behavior for new users:
+  // 1. First login: "Set up Email Authenticator" screen, user clicks Enable
+  // 2. Enable click → credential created → user goes to dashboard (no OTP)
+  // 3. Subsequent logins: OTP sent to email, OTP input required
+  //
+  // Future fix: Fork keycloak-2fa-email-authenticator SPI to auto-create
+  // credentials and require OTP on first login.
+  async createEmailAuthenticatorCredential(
+    realmName: string,
+    userId: string,
+    userEmail: string
+  ): Promise<void> {
+    logger.warn(
+      { realmName, userId, userEmail },
+      'Email-authenticator credential cannot be pre-created via REST API. ' +
+        'User will see setup screen on first login.'
+    );
+  }
 }
 
 export const keycloakAdmin = new KeycloakAdminService();

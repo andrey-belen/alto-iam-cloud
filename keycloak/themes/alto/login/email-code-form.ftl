@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('code') displayInfo=false; section>
+<@layout.registrationLayout displayMessage=!messagesPerField.existsError('emailCode') displayInfo=false; section>
     <#if section = "header">
         <h1>Verify Your Identity</h1>
     <#elseif section = "form">
@@ -20,25 +20,25 @@
             <form id="kc-otp-login-form" action="${url.loginAction}" method="post">
                 <!-- OTP Input -->
                 <div class="otp-input-container">
-                    <input id="code"
-                           name="code"
+                    <input id="emailCode"
+                           name="emailCode"
                            autocomplete="one-time-code"
                            type="text"
-                           class="otp-input <#if messagesPerField.existsError('code')>error</#if>"
+                           class="otp-input <#if messagesPerField.existsError('emailCode')>error</#if>"
                            autofocus
-                           aria-invalid="<#if messagesPerField.existsError('code')>true</#if>"
+                           aria-invalid="<#if messagesPerField.existsError('emailCode')>true</#if>"
                            inputmode="numeric"
                            pattern="[0-9]*"
                            maxlength="6"
                            placeholder="000000"/>
                 </div>
 
-                <#if messagesPerField.existsError('code')>
+                <#if messagesPerField.existsError('emailCode')>
                     <div class="alto-alert alto-alert-error" aria-live="polite">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                        <span>${kcSanitize(messagesPerField.getFirstError('code'))?no_esc}</span>
+                        <span>${kcSanitize(messagesPerField.getFirstError('emailCode'))?no_esc}</span>
                     </div>
                 </#if>
 

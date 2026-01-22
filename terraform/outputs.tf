@@ -15,7 +15,4 @@ output "otp_policy_configured" {
   value       = module.mfa_email_otp.otp_policy_configured
 }
 
-output "smtp_configured" {
-  description = "Whether SMTP settings were successfully configured"
-  value       = module.mfa_email_otp.smtp_configured
-}
+# SMTP configured via Admin API, not Terraform

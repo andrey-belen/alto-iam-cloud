@@ -94,6 +94,85 @@ if [ -n "$CLIENT_ID" ]; then
     }' 2>/dev/null || echo "(mapper may already exist)"
 fi
 
+# ============================================================================
+# Add client_prefix to User Profile (required for Keycloak 26+)
+# ============================================================================
+echo "Updating User Profile to include client_prefix attribute..."
+
+# Get current User Profile config
+UP_CONFIG=$(curl -s "${KEYCLOAK_URL}/admin/realms/master/users/profile" \
+  -H "Authorization: Bearer ${TOKEN}")
+
+# Check if client_prefix already exists
+if echo "$UP_CONFIG" | grep -q '"name":"client_prefix"'; then
+  echo "client_prefix attribute already exists in User Profile"
+else
+  # Add client_prefix to User Profile
+  # Parse and update the config to add client_prefix attribute
+  UP_UPDATED=$(echo "$UP_CONFIG" | sed 's/"attributes":\[/"attributes":[{"name":"client_prefix","displayName":"Client Prefix","validations":{},"permissions":{"view":["admin","user"],"edit":["admin"]},"multivalued":true},/')
+
+  curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/master/users/profile" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "$UP_UPDATED" 2>/dev/null || echo "(User Profile update may have issues)"
+
+  echo "Added client_prefix to User Profile"
+fi
+
+# ============================================================================
+# Create test users
+# AICODE-NOTE: Keycloak Admin REST API does NOT support creating custom
+# credential types like 'email-authenticator'. The credential can only be
+# created by the SPI when user clicks Enable on first login.
+# ============================================================================
+echo ""
+echo "Creating test users..."
+
+create_test_user() {
+  local USERNAME=$1
+  local EMAIL=$2
+  local FIRSTNAME=$3
+  local LASTNAME=$4
+  local PASSWORD=$5
+  local CLIENT_PREFIX=$6
+
+  echo "Creating user: $USERNAME..."
+
+  USER_RESPONSE=$(curl -s -X POST "${KEYCLOAK_URL}/admin/realms/master/users" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"username\": \"$USERNAME\",
+      \"email\": \"$EMAIL\",
+      \"firstName\": \"$FIRSTNAME\",
+      \"lastName\": \"$LASTNAME\",
+      \"enabled\": true,
+      \"emailVerified\": true,
+      \"attributes\": {
+        \"client_prefix\": [\"$CLIENT_PREFIX\"]
+      },
+      \"credentials\": [{
+        \"type\": \"password\",
+        \"value\": \"$PASSWORD\",
+        \"temporary\": false
+      }]
+    }" -w "%{http_code}" -o /dev/null)
+
+  if [ "$USER_RESPONSE" = "201" ]; then
+    echo "  User $USERNAME created"
+  elif [ "$USER_RESPONSE" = "409" ]; then
+    echo "  User $USERNAME already exists"
+  else
+    echo "  User creation returned status: $USER_RESPONSE"
+  fi
+}
+
+# Create alto-operator (super admin) - username=email for consistency
+create_test_user "operator@alto.cloud" "operator@alto.cloud" "Alto" "Operator" "operator123" "*"
+
+# Create marriott-admin (client admin) - username=email for consistency
+create_test_user "admin@marriott.com" "admin@marriott.com" "Marriott" "Admin" "marriott123" "marriott"
+
 echo ""
 echo "Done! alto-crm client created and configured."
 echo ""
@@ -102,5 +181,8 @@ echo "  - CRM Dashboard: http://localhost:3000"
 echo "  - Keycloak Admin: http://localhost:8080/admin"
 echo ""
 echo "Test users created:"
-echo "  - alto-operator / operator123 (super admin - sees all realms)"
-echo "  - marriott-admin / marriott123 (client admin - sees marriott-* only)"
+echo "  - operator@alto.cloud / operator123 (super admin - sees all realms)"
+echo "  - admin@marriott.com / marriott123 (client admin - sees marriott-* only)"
+echo ""
+echo "NOTE: On first login, users will see 'Set up Email Authenticator' screen."
+echo "      Click 'Enable' to activate MFA. Subsequent logins require OTP."

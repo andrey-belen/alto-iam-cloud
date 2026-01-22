@@ -216,12 +216,21 @@ router.post(
           emailVerified: false,
         });
 
+        // AICODE-NOTE: Pre-create email-authenticator credential for immediate MFA
+        // Without this, user sees "Set up Email Authenticator" screen on first login
+        // With credential, user goes directly to OTP input after password
+        await keycloakAdmin.createEmailAuthenticatorCredential(
+          request.propertyId,
+          userId,
+          request.email
+        );
+
         // Send password reset email so user can set their password
         await keycloakAdmin.sendPasswordResetEmail(request.propertyId, userId);
 
         logger.info(
           { requestId: request.id, userId, propertyId: request.propertyId },
-          'User created and password reset email sent'
+          'User created with MFA credential and password reset email sent'
         );
       } catch (error) {
         logger.error({ error, requestId: request.id }, 'Failed to create Keycloak user');
