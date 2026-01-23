@@ -201,6 +201,12 @@ class KeycloakAdminService {
 
     if (!response.ok) {
       const errorText = await response.text();
+
+      // AICODE-NOTE: Handle 409 Conflict (user already exists)
+      if (response.status === 409) {
+        throw new Error(`User already exists: ${userData.email || userData.username}`);
+      }
+
       throw new Error(`Failed to create user: ${response.status} - ${errorText}`);
     }
 

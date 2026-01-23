@@ -212,8 +212,9 @@ router.post(
           'User created via magic link approval'
         );
       } catch (error) {
-        logger.error({ error, requestId: request.id }, 'Failed to create Keycloak user');
-        res.status(500).json({ error: 'Failed to create user account' });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error({ error: errorMessage, requestId: request.id }, 'Failed to create Keycloak user');
+        res.status(500).json({ error: errorMessage || 'Failed to create user account' });
         return;
       }
 
@@ -467,8 +468,9 @@ router.post(
           'User created with MFA credential and password reset email sent'
         );
       } catch (error) {
-        logger.error({ error, requestId: request.id }, 'Failed to create Keycloak user');
-        res.status(500).json({ error: 'Failed to create user account' });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error({ error: errorMessage, requestId: request.id }, 'Failed to create Keycloak user');
+        res.status(500).json({ error: errorMessage || 'Failed to create user account' });
         return;
       }
 
