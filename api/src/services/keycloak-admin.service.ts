@@ -175,6 +175,8 @@ class KeycloakAdminService {
     );
   }
 
+  // AICODE-NOTE: requiredActions can include 'UPDATE_PASSWORD', 'VERIFY_EMAIL', etc.
+  // When set, Keycloak will prompt user to complete these actions on first login
   async createUser(
     realmName: string,
     userData: {
@@ -185,6 +187,7 @@ class KeycloakAdminService {
       enabled?: boolean;
       emailVerified?: boolean;
       credentials?: Array<{ type: string; value: string; temporary?: boolean }>;
+      requiredActions?: string[];
     }
   ): Promise<string> {
     const response = await fetch(

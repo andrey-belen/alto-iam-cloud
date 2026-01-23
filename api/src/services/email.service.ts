@@ -292,8 +292,8 @@ class EmailService {
           </p>
           <ol style="color: #334155; margin-bottom: 24px; padding-left: 20px;">
             <li style="margin-bottom: 8px;">Click the login button below</li>
-            <li style="margin-bottom: 8px;">Check your email for a password reset link</li>
-            <li style="margin-bottom: 8px;">Set your password and complete MFA setup</li>
+            <li style="margin-bottom: 8px;">You will be prompted to create your password</li>
+            <li style="margin-bottom: 8px;">Complete MFA setup (email verification code)</li>
           </ol>
 
           <div style="text-align: center; margin: 32px 0;">

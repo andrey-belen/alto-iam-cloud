@@ -177,7 +177,8 @@ router.post(
       const finalRole = role || request.rolePreference;
       const realmName = 'alto';
 
-      // Create user in Keycloak
+      // Create user in Keycloak with UPDATE_PASSWORD required action
+      // AICODE-NOTE: User will be prompted to set password on first login attempt
       try {
         const userId = await keycloakAdmin.createUser(realmName, {
           username: request.email,
@@ -186,6 +187,7 @@ router.post(
           lastName: request.lastName,
           enabled: true,
           emailVerified: false,
+          requiredActions: ['UPDATE_PASSWORD'],
         });
 
         // Pre-create email-authenticator credential for immediate MFA (non-blocking)
@@ -197,14 +199,6 @@ router.post(
           );
         } catch (credError) {
           logger.warn({ error: credError, userId }, 'Could not pre-create MFA credential');
-        }
-
-        // Send password reset email (non-blocking - user can use "forgot password" if this fails)
-        try {
-          await keycloakAdmin.sendPasswordResetEmail(realmName, userId);
-          logger.info({ userId }, 'Password reset email sent');
-        } catch (emailError) {
-          logger.warn({ error: emailError, userId }, 'Could not send password reset email');
         }
 
         logger.info(
@@ -430,7 +424,8 @@ router.post(
       const realmName = 'alto';
       const finalRole = approvalData.role || request.rolePreference;
 
-      // Create user in Keycloak and send password reset email
+      // Create user in Keycloak with UPDATE_PASSWORD required action
+      // AICODE-NOTE: User will be prompted to set password on first login attempt
       try {
         const userId = await keycloakAdmin.createUser(realmName, {
           username: request.email,
@@ -439,6 +434,7 @@ router.post(
           lastName: request.lastName,
           enabled: true,
           emailVerified: false,
+          requiredActions: ['UPDATE_PASSWORD'],
         });
 
         // AICODE-TODO: Assign user to client group (/clients/{clientId})
@@ -446,17 +442,16 @@ router.post(
         // AICODE-TODO: Assign realm role (operator or viewer)
         // These require additional Keycloak Admin API methods for group/role assignment
 
-        // AICODE-NOTE: Pre-create email-authenticator credential for immediate MFA
-        // Without this, user sees "Set up Email Authenticator" screen on first login
-        // With credential, user goes directly to OTP input after password
-        await keycloakAdmin.createEmailAuthenticatorCredential(
-          realmName,
-          userId,
-          request.email
-        );
-
-        // Send password reset email so user can set their password
-        await keycloakAdmin.sendPasswordResetEmail(realmName, userId);
+        // Pre-create email-authenticator credential for immediate MFA (non-blocking)
+        try {
+          await keycloakAdmin.createEmailAuthenticatorCredential(
+            realmName,
+            userId,
+            request.email
+          );
+        } catch (credError) {
+          logger.warn({ error: credError, userId }, 'Could not pre-create MFA credential');
+        }
 
         logger.info(
           {
@@ -465,7 +460,7 @@ router.post(
             clientId: approvalData.clientId,
             role: finalRole,
           },
-          'User created with MFA credential and password reset email sent'
+          'User created with required password update action'
         );
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

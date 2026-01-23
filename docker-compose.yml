@@ -116,18 +116,25 @@ services:
       KEYCLOAK_ADMIN_REALM: master
       KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-admin-cli}
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
+      KEYCLOAK_ADMIN_USER: ${KC_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
 
       # CORS
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
 
-      # SMTP (MailHog in dev)
+      # SMTP
       SMTP_ENABLED: ${SMTP_ENABLED:-true}
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@alto.com}
 
       # Dashboard URL for email links
-      DASHBOARD_URL: http://localhost:3000
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
+
+      # Admin notification email
+      ADMIN_NOTIFICATION_EMAIL: ${ADMIN_NOTIFICATION_EMAIL:-andrey.b@altotech.net}
     ports:
       - "${API_PORT:-3001}:3001"
     depends_on:
