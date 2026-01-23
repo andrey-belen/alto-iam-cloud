@@ -31,14 +31,17 @@ class KeycloakAdminService {
   private baseUrl: string;
   private adminRealm: string;
   private clientId: string;
-  private clientSecret: string;
+  private adminUsername: string;
+  private adminPassword: string;
   private token: KeycloakToken | null = null;
 
   constructor() {
     this.baseUrl = process.env.KEYCLOAK_URL || 'http://localhost:8080';
     this.adminRealm = process.env.KEYCLOAK_ADMIN_REALM || 'master';
     this.clientId = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'admin-cli';
-    this.clientSecret = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || '';
+    // AICODE-NOTE: Use admin username/password for password grant (admin-cli doesn't support client_credentials)
+    this.adminUsername = process.env.KEYCLOAK_ADMIN_USER || 'admin';
+    this.adminPassword = process.env.KEYCLOAK_ADMIN_PASSWORD || 'admin';
   }
 
   private async getToken(): Promise<string> {
@@ -50,9 +53,10 @@ class KeycloakAdminService {
     const tokenUrl = `${this.baseUrl}/realms/${this.adminRealm}/protocol/openid-connect/token`;
 
     const params = new URLSearchParams();
-    params.append('grant_type', 'client_credentials');
+    params.append('grant_type', 'password');
     params.append('client_id', this.clientId);
-    params.append('client_secret', this.clientSecret);
+    params.append('username', this.adminUsername);
+    params.append('password', this.adminPassword);
 
     try {
       const response = await fetch(tokenUrl, {
