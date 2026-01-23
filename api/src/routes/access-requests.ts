@@ -117,7 +117,7 @@ router.get(
   '/token/:token',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { token } = req.params;
+      const token = req.params.token as string;
 
       const request = await prisma.accessRequest.findUnique({
         where: { approvalToken: token },
@@ -152,7 +152,7 @@ router.post(
   '/token/:token/approve',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { token } = req.params;
+      const token = req.params.token as string;
       const { role } = req.body;
 
       const request = await prisma.accessRequest.findUnique({
@@ -241,7 +241,7 @@ router.post(
   '/token/:token/reject',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { token } = req.params;
+      const token = req.params.token as string;
       const { reason } = req.body;
 
       const request = await prisma.accessRequest.findUnique({
