@@ -188,15 +188,24 @@ router.post(
           emailVerified: false,
         });
 
-        // Pre-create email-authenticator credential for immediate MFA
-        await keycloakAdmin.createEmailAuthenticatorCredential(
-          realmName,
-          userId,
-          request.email
-        );
+        // Pre-create email-authenticator credential for immediate MFA (non-blocking)
+        try {
+          await keycloakAdmin.createEmailAuthenticatorCredential(
+            realmName,
+            userId,
+            request.email
+          );
+        } catch (credError) {
+          logger.warn({ error: credError, userId }, 'Could not pre-create MFA credential');
+        }
 
-        // Send password reset email
-        await keycloakAdmin.sendPasswordResetEmail(realmName, userId);
+        // Send password reset email (non-blocking - user can use "forgot password" if this fails)
+        try {
+          await keycloakAdmin.sendPasswordResetEmail(realmName, userId);
+          logger.info({ userId }, 'Password reset email sent');
+        } catch (emailError) {
+          logger.warn({ error: emailError, userId }, 'Could not send password reset email');
+        }
 
         logger.info(
           { requestId: request.id, userId, role: finalRole },
