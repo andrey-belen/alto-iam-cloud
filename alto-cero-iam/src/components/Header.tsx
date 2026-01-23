@@ -23,7 +23,7 @@ export function Header() {
               <span className="text-white font-bold text-lg">A</span>
             </div>
             <span className="text-xl font-semibold text-slate-900">
-              Alto CRM
+              Alto CERO IAM
             </span>
           </Link>
 

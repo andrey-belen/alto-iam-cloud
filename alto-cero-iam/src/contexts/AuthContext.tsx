@@ -13,16 +13,24 @@ import {
   getToken,
   getUserFromKeycloak,
 } from '@/services/keycloak';
-import type { AuthState } from '@/types';
+import type { AuthState, UserRole } from '@/types';
 
 // AICODE-NOTE: Authentication context for Alto CRM Dashboard
 // Wraps Keycloak functionality and provides auth state to components
+// Realm = Client architecture: realm determines client access, groups determine site access
 
 interface AuthContextType extends AuthState {
   login: () => void;
   logout: () => void;
   getAccessToken: () => string | null;
-  hasRole: (role: string) => boolean;
+  hasRole: (role: UserRole) => boolean;
+  // Role checks
+  isAltoAdmin: () => boolean;
+  isClientAdmin: () => boolean;
+  // Access checks
+  canAccessClient: (clientName: string) => boolean;
+  canAccessSite: (clientName: string, siteName: string) => boolean;
+  // Legacy alias
   isSuperAdmin: () => boolean;
 }
 
@@ -46,7 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (authenticated) {
           const user = getUserFromKeycloak();
           const token = getToken() || null;
-          console.log('AuthContext: User authenticated:', user?.username, user?.clientPrefix);
+          console.log('AuthContext: User authenticated:', {
+            username: user?.username,
+            roles: user?.roles,
+            clientName: user?.clientName,
+            assignedSites: user?.assignedSites,
+          });
 
           setState({
             isAuthenticated: true,
@@ -96,18 +109,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const hasRole = useCallback(
-    (role: string): boolean => {
+    (role: UserRole): boolean => {
       if (!state.user) return false;
       return state.user.roles.includes(role);
     },
     [state.user]
   );
 
-  // AICODE-NOTE: Super admin check for client isolation
-  // client_prefix = "*" means Alto operator with access to ALL realms/features
-  const isSuperAdmin = useCallback((): boolean => {
-    return state.user?.clientPrefix === '*';
+  // AICODE-NOTE: Role check helpers for access control
+  const isAltoAdmin = useCallback((): boolean => {
+    return state.user?.roles.includes('alto-admin') ?? false;
   }, [state.user]);
+
+  const isClientAdmin = useCallback((): boolean => {
+    return state.user?.roles.includes('client-admin') ?? false;
+  }, [state.user]);
+
+  // AICODE-NOTE: Access control helpers
+  // Determine if user can access a specific client's resources
+  const canAccessClient = useCallback(
+    (clientName: string): boolean => {
+      if (!state.user) return false;
+      // Alto admin can access all clients
+      if (state.user.roles.includes('alto-admin')) return true;
+      // Others can only access their assigned client
+      return state.user.clientName === clientName;
+    },
+    [state.user]
+  );
+
+  // Determine if user can access a specific site
+  const canAccessSite = useCallback(
+    (clientName: string, siteName: string): boolean => {
+      if (!state.user) return false;
+      // Alto admin can access all sites
+      if (state.user.roles.includes('alto-admin')) return true;
+      // Must be in the correct client first
+      if (state.user.clientName !== clientName) return false;
+      // Client admin can access all sites in their client
+      if (state.user.roles.includes('client-admin')) return true;
+      // Operators/viewers can only access assigned sites
+      return state.user.assignedSites.includes(siteName);
+    },
+    [state.user]
+  );
+
+  // Legacy alias for backward compatibility
+  const isSuperAdmin = isAltoAdmin;
 
   const value: AuthContextType = {
     ...state,
@@ -115,6 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     getAccessToken,
     hasRole,
+    isAltoAdmin,
+    isClientAdmin,
+    canAccessClient,
+    canAccessSite,
     isSuperAdmin,
   };
 

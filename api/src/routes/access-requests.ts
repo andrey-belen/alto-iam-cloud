@@ -18,19 +18,21 @@ const router = Router();
 // Validation Schemas
 // ============================================================================
 
+// AICODE-NOTE: Access request schema matches Prisma model and frontend form
+// company = client organization name (will be matched to /clients/{company} group)
+// rolePreference = requested role (operator or viewer)
 const CreateAccessRequestSchema = z.object({
-  propertyId: z.string().min(1, 'Property ID is required'),
+  company: z.string().min(1, 'Company name is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Valid email is required'),
-  phone: z.string().optional(),
-  unit: z.string().optional(),
-  reason: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required'),
+  rolePreference: z.enum(['operator', 'viewer']),
 });
 
 const GetAccessRequestsSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']).optional(),
-  propertyId: z.string().optional(),
+  company: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -45,26 +47,15 @@ router.post(
     try {
       const data = CreateAccessRequestSchema.parse(req.body);
 
-      // Get property name from Keycloak
-      let propertyName = data.propertyId;
-      try {
-        const realm = await keycloakAdmin.getRealm(data.propertyId);
-        propertyName = realm.displayName || realm.realm;
-      } catch (error) {
-        logger.warn({ propertyId: data.propertyId }, 'Could not fetch realm name');
-      }
-
       // Create access request
       const accessRequest = await prisma.accessRequest.create({
         data: {
-          propertyId: data.propertyId,
-          propertyName,
+          company: data.company,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
           phone: data.phone,
-          unit: data.unit,
-          reason: data.reason,
+          rolePreference: data.rolePreference,
         },
       });
 
@@ -72,13 +63,13 @@ router.post(
       await emailService.sendAccessRequestConfirmation(
         data.email,
         data.firstName,
-        propertyName
+        data.company
       );
 
-      // TODO: Send notification to property admin
+      // TODO: Send notification to alto-admin for approval
 
       logger.info(
-        { requestId: accessRequest.id, email: data.email },
+        { requestId: accessRequest.id, email: data.email, company: data.company },
         'Access request created'
       );
 
@@ -104,15 +95,15 @@ router.get(
 
       const where: {
         status?: AccessRequestStatus;
-        propertyId?: string;
+        company?: string;
       } = {};
 
       if (query.status) {
         where.status = query.status as AccessRequestStatus;
       }
 
-      if (query.propertyId) {
-        where.propertyId = query.propertyId;
+      if (query.company) {
+        where.company = query.company;
       }
 
       const [items, total] = await Promise.all([
@@ -183,6 +174,14 @@ router.get(
   }
 );
 
+// AICODE-NOTE: Approval schema for assigning user to client/sites
+// Admin must specify clientId (group name) when approving
+const ApproveRequestSchema = z.object({
+  clientId: z.string().min(1, 'Client ID is required'),
+  siteIds: z.array(z.string()).optional(), // Optional site assignments
+  role: z.enum(['operator', 'viewer']).optional(), // Override requested role
+});
+
 // Approve access request - ALTO ADMIN ONLY
 router.post(
   '/:id/approve',
@@ -191,6 +190,8 @@ router.post(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const id = req.params.id as string;
+      const approvalData = ApproveRequestSchema.parse(req.body);
+
       const request = await prisma.accessRequest.findUnique({
         where: { id },
       });
@@ -205,9 +206,13 @@ router.post(
         return;
       }
 
+      // AICODE-NOTE: All users created in single 'alto' realm
+      const realmName = 'alto';
+      const finalRole = approvalData.role || request.rolePreference;
+
       // Create user in Keycloak and send password reset email
       try {
-        const userId = await keycloakAdmin.createUser(request.propertyId, {
+        const userId = await keycloakAdmin.createUser(realmName, {
           username: request.email,
           email: request.email,
           firstName: request.firstName,
@@ -216,20 +221,30 @@ router.post(
           emailVerified: false,
         });
 
+        // AICODE-TODO: Assign user to client group (/clients/{clientId})
+        // AICODE-TODO: Assign user to site groups (/clients/{clientId}/sites/{siteId})
+        // AICODE-TODO: Assign realm role (operator or viewer)
+        // These require additional Keycloak Admin API methods for group/role assignment
+
         // AICODE-NOTE: Pre-create email-authenticator credential for immediate MFA
         // Without this, user sees "Set up Email Authenticator" screen on first login
         // With credential, user goes directly to OTP input after password
         await keycloakAdmin.createEmailAuthenticatorCredential(
-          request.propertyId,
+          realmName,
           userId,
           request.email
         );
 
         // Send password reset email so user can set their password
-        await keycloakAdmin.sendPasswordResetEmail(request.propertyId, userId);
+        await keycloakAdmin.sendPasswordResetEmail(realmName, userId);
 
         logger.info(
-          { requestId: request.id, userId, propertyId: request.propertyId },
+          {
+            requestId: request.id,
+            userId,
+            clientId: approvalData.clientId,
+            role: finalRole,
+          },
           'User created with MFA credential and password reset email sent'
         );
       } catch (error) {
@@ -252,7 +267,7 @@ router.post(
       await emailService.sendAccessRequestApproved(
         request.email,
         request.firstName,
-        request.propertyName
+        request.company
       );
 
       logger.info(
@@ -305,7 +320,7 @@ router.post(
       await emailService.sendAccessRequestRejected(
         request.email,
         request.firstName,
-        request.propertyName,
+        request.company,
         reason
       );
 

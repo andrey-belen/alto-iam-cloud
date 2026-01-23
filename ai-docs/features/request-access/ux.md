@@ -2,148 +2,395 @@
 
 **Platform**: Web (Desktop-first, responsive)
 
-## User Flow
+## User Flows
 
-```mermaid
-flowchart TD
-    Start([User visits /request-access]) --> Form[Display Request Form]
-    Form --> Fill[User fills form fields]
-    Fill --> Validate{Client-side valid?}
+### Flow 1: Public Access Request
 
-    Validate -->|No| ShowErrors[Show inline errors]
-    ShowErrors --> Fill
-    Validate -->|Yes| Submit[Submit request]
-
-    Submit --> Loading[Show submitting state]
-    Loading --> ServerCheck{Server accepts?}
-
-    ServerCheck -->|Yes| Success[Show success message]
-    ServerCheck -->|Duplicate| DuplicateError[Show email exists error]
-    ServerCheck -->|Error| ServerError[Show server error]
-
-    DuplicateError --> Fill
-    ServerError --> Fill
-    Success --> Done([User waits for email])
-
-    subgraph Operator Flow
-        Queue([Operator views queue]) --> SelectRequest[Select pending request]
-        SelectRequest --> ReviewDetails[View request details]
-        ReviewDetails --> Decision{Approve or Reject?}
-
-        Decision -->|Approve| SelectProperty[Select property from dropdown]
-        SelectProperty --> ConfirmApprove[Confirm approval]
-        ConfirmApprove --> CreateUser[Create Keycloak user]
-        CreateUser --> SendApprovalEmail[Send credentials email]
-
-        Decision -->|Reject| EnterReason[Enter rejection reason]
-        EnterReason --> ConfirmReject[Confirm rejection]
-        ConfirmReject --> SendRejectEmail[Send rejection email]
-    end
+```
+User visits /request-access
+         │
+         ▼
+┌─────────────────┐
+│  Compact Form   │  Company, Name, Email, Phone, Role Pref
+│  (no scroll)    │
+└────────┬────────┘
+         │ Submit
+         ▼
+┌─────────────────┐     ┌─────────────────┐
+│ Success Screen  │────▶│ Admin Email     │
+│ "We'll be in    │     │ with Approve/   │
+│  touch soon"    │     │ Reject links    │
+└─────────────────┘     └─────────────────┘
 ```
 
-**Exit Path Behaviors:**
-- **Cancel (public form)**: Form cleared, no data saved
-- **Close modal (operator)**: No changes saved, request remains pending
+### Flow 2: Email Approval (Magic Link)
 
-## Interaction Model
-
-### Core Actions
-
-- **submit_request**
-  ```json
-  {
-    "trigger": "User clicks Submit Request button",
-    "feedback": "Button shows spinner, form disabled",
-    "success": "Success message with check icon, form hidden",
-    "error": "Inline error below form, form re-enabled"
-  }
-  ```
-
-- **approve_request**
-  ```json
-  {
-    "trigger": "Operator clicks Approve in modal",
-    "feedback": "Button shows spinner",
-    "success": "Toast: 'User created and notified', request removed from queue",
-    "error": "Toast: 'Failed to create user', modal stays open"
-  }
-  ```
-
-- **reject_request**
-  ```json
-  {
-    "trigger": "Operator clicks Reject in modal",
-    "feedback": "Button shows spinner",
-    "success": "Toast: 'Request rejected', request removed from queue",
-    "error": "Toast: 'Failed to reject', modal stays open"
-  }
-  ```
-
-### States & Transitions
-
-```json
-{
-  "form_idle": "Empty form ready for input",
-  "form_filling": "User entering data",
-  "form_submitting": "Request being sent to server",
-  "form_success": "Request submitted successfully",
-  "form_error": "Submission failed",
-  "queue_loading": "Loading pending requests",
-  "queue_ready": "Requests displayed in table",
-  "reviewing": "Operator viewing request details modal",
-  "processing": "Approve/reject in progress"
-}
+```
+Admin receives email
+         │
+   ┌─────┴─────┐
+   │           │
+   ▼           ▼
+[Approve]   [Reject]
+   │           │
+   ▼           ▼
+┌────────────────┐  ┌───────────────┐
+│ Approval Page  │  │ Rejection     │
+│ - Summary      │  │ - Summary     │
+│ - Realm select │  │ - Reason      │
+│ - Role select  │  └───────┬───────┘
+│ - Site select  │          │
+└───────┬────────┘          ▼
+        │              Send rejection
+        ▼              email to user
+Create Keycloak
+user + assign
+role + sites +
+send welcome
 ```
 
-## Quantified UX Elements
+### Flow 3: Dashboard Approval (Alto Admin)
 
-| Element | Formula / Source Reference |
-|---------|----------------------------|
-| Form fields | 6 required + 1 optional |
-| Rejection reason min length | 10 characters |
-| Queue refresh interval | 30 seconds |
+```
+Alto Admin → Access Queue
+         │
+         ▼
+Pending Requests Table (all requests)
+         │
+   ┌─────┴─────┐
+   │           │
+   ▼           ▼
+[Approve]   [Reject]
+   │           │
+   ▼           ▼
+┌────────────────┐  ┌───────────────┐
+│ Approval Modal │  │ Rejection     │
+│ - Summary      │  │ Modal         │
+│ - Realm (all)  │  │ - Reason      │
+│ - Role (all)   │  └───────────────┘
+│ - Sites        │
+└────────────────┘
+```
 
-## Platform-Specific Patterns
+### Flow 4: Dashboard Approval (Client Admin)
 
-### Web
-- **Responsive**: Form max-width 500px centered, queue full-width table
-- **Keyboard**: Tab through fields, Enter submits
-- **Browser**: Form autocomplete for name/email/phone fields
+```
+Client Admin → Access Queue
+         │
+         ▼
+Pending Requests Table (filtered to realm's company)
+         │
+   ┌─────┴─────┐
+   │           │
+   ▼           ▼
+[Approve]   [Reject]
+   │           │
+   ▼           ▼
+┌────────────────┐  ┌───────────────┐
+│ Approval Modal │  │ Rejection     │
+│ - Summary      │  │ Modal         │
+│ - Realm (fixed)│  │ - Reason      │
+│ - Role (no     │  └───────────────┘
+│   admin option)│
+│ - Sites (own)  │
+└────────────────┘
+```
+
+## Screen Specifications
+
+### Public Form (/request-access)
+
+```
+┌────────────────────────────────────────┐
+│           Alto CERO IAM                │
+│          Request Access                │
+│                                        │
+│  Company Name *                        │
+│  ┌──────────────────────────────────┐ │
+│  │ e.g., Marriott International     │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+│  First Name *          Last Name *     │
+│  ┌───────────────┐    ┌──────────────┐│
+│  │ John          │    │ Smith        ││
+│  └───────────────┘    └──────────────┘│
+│                                        │
+│  Email *                               │
+│  ┌──────────────────────────────────┐ │
+│  │ john.smith@company.com           │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+│  Phone *                               │
+│  ┌──────────────────────────────────┐ │
+│  │ +1 (555) 123-4567                │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+│  Role Preference *                     │
+│  ┌──────────────────────────────────┐ │
+│  │ Operator                      ▼  │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+│  ┌──────────────────────────────────┐ │
+│  │       Submit Request             │ │
+│  └──────────────────────────────────┘ │
+│                                        │
+│     Already have access? Sign in       │
+└────────────────────────────────────────┘
+```
+
+**Role Preference Options:**
+- Operator - "Can control building systems"
+- Viewer - "Read-only access to dashboards"
+
+### Approval Page (/approve/{token})
+
+```
+┌──────────────────────────────────────────────┐
+│              Alto CERO IAM                    │
+│         Approve Access Request               │
+│                                              │
+│  ┌────────────────────────────────────────┐ │
+│  │ REQUEST DETAILS                        │ │
+│  │                                        │ │
+│  │ Name:       John Smith                 │ │
+│  │ Email:      john.smith@company.com     │ │
+│  │ Company:    Marriott International     │ │
+│  │ Phone:      +1 (555) 123-4567          │ │
+│  │ Preference: Operator                   │ │
+│  │ Submitted:  Jan 22, 2026 at 3:45 PM    │ │
+│  └────────────────────────────────────────┘ │
+│                                              │
+│  ┌────────────────────────────────────────┐ │
+│  │ ASSIGN ACCESS                          │ │
+│  │                                        │ │
+│  │ Realm *                                │ │
+│  │ ┌────────────────────────────────┐    │ │
+│  │ │ Select realm                ▼  │    │ │
+│  │ └────────────────────────────────┘    │ │
+│  │                                        │ │
+│  │ Role *                                 │ │
+│  │ ┌────────────────────────────────┐    │ │
+│  │ │ Operator                    ▼  │    │ │
+│  │ └────────────────────────────────┘    │ │
+│  │                                        │ │
+│  │ Assign to Sites *                      │ │
+│  │ ┌────────────────────────────────┐    │ │
+│  │ │ ☑ Hong Kong Office             │    │ │
+│  │ │ ☐ Singapore Office             │    │ │
+│  │ │ ☐ Tokyo Office                 │    │ │
+│  │ └────────────────────────────────┘    │ │
+│  └────────────────────────────────────────┘ │
+│                                              │
+│  ┌──────────────────────────────────────┐   │
+│  │   Create User & Send Welcome Email   │   │
+│  └──────────────────────────────────────┘   │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+**Role Options (by approver):**
+| Approver | Available Roles |
+|----------|-----------------|
+| Alto Admin | Client Admin, Operator, Viewer |
+| Client Admin | Operator, Viewer |
+
+### Dashboard Access Queue Page
+
+**Header**
+- Title: "Access Requests"
+- Badge showing pending count
+
+**Tabs**
+- Pending (default)
+- Approved
+- Rejected
+
+**Table Columns (Alto Admin)**
+| Column | Width | Content |
+|--------|-------|---------|
+| Name | 150px | First + Last name |
+| Email | 200px | Email address |
+| Company | 150px | Company name |
+| Role Pref | 100px | Operator/Viewer badge |
+| Submitted | 120px | Relative date |
+| Actions | 150px | Approve/Reject buttons |
+
+**Table Columns (Client Admin)**
+| Column | Width | Content |
+|--------|-------|---------|
+| Name | 150px | First + Last name |
+| Email | 200px | Email address |
+| Role Pref | 100px | Operator/Viewer badge |
+| Submitted | 120px | Relative date |
+| Actions | 150px | Approve/Reject buttons |
+
+### Approval Modal (Dashboard)
+
+```
+┌──────────────────────────────────────────┐
+│ Approve Access Request              [X]  │
+├──────────────────────────────────────────┤
+│                                          │
+│ John Smith                               │
+│ john.smith@company.com                   │
+│ Marriott International                   │
+│ Requested: Operator                      │
+│                                          │
+├──────────────────────────────────────────┤
+│                                          │
+│ Realm                                    │
+│ ┌──────────────────────────────────┐    │
+│ │ marriott                      ▼  │    │
+│ └──────────────────────────────────┘    │
+│                                          │
+│ Role                                     │
+│ ┌──────────────────────────────────┐    │
+│ │ Operator                      ▼  │    │
+│ └──────────────────────────────────┘    │
+│                                          │
+│ Sites                                    │
+│ ☑ Hong Kong Office                       │
+│ ☐ Singapore Office                       │
+│ ☐ Tokyo Office                           │
+│                                          │
+├──────────────────────────────────────────┤
+│              [Cancel]  [Approve & Create]│
+└──────────────────────────────────────────┘
+```
+
+## Email Templates
+
+### Admin Notification Email
+
+```
+Subject: New Access Request: John Smith (Marriott International)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+New Access Request
+
+Someone has requested access to Alto CERO IAM.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Name:       John Smith
+Email:      john.smith@company.com
+Company:    Marriott International
+Phone:      +1 (555) 123-4567
+Role Pref:  Operator
+Submitted:  Jan 22, 2026 at 3:45 PM
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please verify this person before approving.
+
+    ┌─────────────────┐    ┌─────────────────┐
+    │     APPROVE     │    │     REJECT      │
+    │     (green)     │    │     (red)       │
+    └─────────────────┘    └─────────────────┘
+
+This link expires in 24 hours.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### User Welcome Email
+
+```
+Subject: Welcome to Alto CERO IAM - Your Access is Ready
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Welcome to Alto CERO IAM
+
+Your access request has been approved!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Login URL: https://iam.alto.cloud
+Username:  john.smith@company.com
+Password:  TempPass123!
+
+Your Role: Operator
+Your Sites:
+  • Hong Kong Office
+  • Singapore Office
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Next Steps:
+1. Click the login link above
+2. Enter your email and temporary password
+3. You'll be prompted to set up MFA (email code)
+4. Change your password when prompted
+
+    ┌─────────────────────────────────────┐
+    │            LOG IN NOW               │
+    └─────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Rejection Email
+
+```
+Subject: Alto CERO IAM Access Request Update
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Access Request Update
+
+Your access request has been reviewed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Unfortunately, your request was not approved at this time.
+
+Reason: [Rejection reason provided by admin]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you believe this is an error, please contact your administrator.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+## Interaction States
+
+### Form States
+- **idle**: Empty form ready for input
+- **submitting**: Button spinner, form disabled
+- **success**: Confirmation message shown
+- **error**: Error message, form re-enabled
+
+### Approval Page States
+- **loading**: Validating token
+- **ready**: Request details + assignment form shown
+- **processing**: Creating user in Keycloak
+- **success**: User created confirmation
+- **error**: Creation failed, retry option
+- **expired**: Token invalid, redirect to dashboard
+
+### Site Selector States
+- **empty**: "Select a realm first" (before realm selected)
+- **loading**: Spinner while fetching sites
+- **populated**: Checkbox list of sites
+- **error**: "Failed to load sites" with retry
 
 ## Accessibility Standards
 
-- **Screen Readers**: ARIA role="form", aria-required on required fields, aria-describedby for errors
-- **Navigation**: Tab order follows visual order, Enter submits form
-- **Visual**: Contrast ratio 4.5:1, required fields marked with asterisk
-- **Touch Targets**: Minimum 44x44px for buttons
+- **Screen Readers**: ARIA role="form", aria-required on all fields
+- **Keyboard**: Tab order follows visual order, Enter submits
+- **Visual**: 4.5:1 contrast ratio, required fields marked with asterisk
+- **Touch**: 44x44px minimum button size
 
 ## Error Presentation
 
-```json
-{
-  "network_failure": {
-    "visual_indicator": "Red banner above form",
-    "message_template": "Unable to submit. Please check your connection.",
-    "action_options": "Retry button",
-    "auto_recovery": "None"
-  },
-  "validation_error": {
-    "visual_indicator": "Red text below each invalid field",
-    "message_template": "[Field] is required / Invalid [field] format",
-    "action_options": "Focus first invalid field",
-    "auto_recovery": "Error clears when field corrected"
-  },
-  "duplicate_email": {
-    "visual_indicator": "Red text below email field",
-    "message_template": "This email is already registered.",
-    "action_options": "None",
-    "auto_recovery": "Error clears when email changed"
-  },
-  "server_error": {
-    "visual_indicator": "Red banner above form",
-    "message_template": "Server error. Please try again later.",
-    "action_options": "Retry button",
-    "auto_recovery": "None"
-  }
-}
-```
+| Error | Visual | Message | Action |
+|-------|--------|---------|--------|
+| Validation | Red border + text below field | "[Field] is required" | Focus field |
+| Duplicate email | Red text below email | "This email is already registered" | Clear on change |
+| Network | Red banner above form | "Connection error. Please try again." | Retry button |
+| Token expired | Full page message | "This link has expired" | Link to dashboard |
+| Server error | Red banner | "Something went wrong. Please try again." | Retry button |
+| Role not allowed | Red text on role field | "You cannot assign this role" | Auto-clear selection |

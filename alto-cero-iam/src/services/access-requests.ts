@@ -122,12 +122,14 @@ export async function getAccessRequest(
 }
 
 export async function approveAccessRequest(
-  requestId: string
+  requestId: string,
+  role: 'client-admin' | 'operator' | 'viewer' = 'operator'
 ): Promise<ApiResponse<AccessRequest>> {
   return fetchWithAuth<AccessRequest>(
     `/access-requests/${requestId}/approve`,
     {
       method: 'POST',
+      body: JSON.stringify({ role }),
     }
   );
 }

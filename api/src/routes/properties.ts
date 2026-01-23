@@ -9,7 +9,8 @@ import { keycloakAdmin } from '../services/keycloak-admin.service.js';
 import { logger } from '../lib/logger.js';
 
 // AICODE-NOTE: Properties routes - wraps Keycloak realms as "properties"
-// Filtered by client_prefix for multi-tenant isolation
+// Filtered by user roles and groups for multi-tenant isolation
+// Uses groups-based access control: alto-admin sees all, others see their client's properties
 
 const router = Router();
 
@@ -29,21 +30,27 @@ const GetPropertiesSchema = z.object({
 // Routes
 // ============================================================================
 
-// Get all properties (realms) - filtered by client_prefix
+// Get all properties (realms) - filtered by user's client access
+// AICODE-NOTE: In the new model, we have a single 'alto' realm with groups for clients
+// This endpoint still returns realms for backward compatibility during transition
 router.get(
   '/',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const query = GetPropertiesSchema.parse(req.query);
-      const clientPrefix = req.user?.clientPrefix || '*';
+
+      if (!req.user) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
+      }
 
       const realms = await keycloakAdmin.getRealms();
 
-      // AICODE-NOTE: Filter realms by client_prefix for client isolation
-      // Super admin (*) sees all, client admin sees only their prefix (e.g., marriott-*)
+      // AICODE-NOTE: Filter realms by user's role and client assignment
+      // Alto admin sees all, others see only their client's realms
       const filteredRealms = filterPropertiesByClient(
         realms.filter((realm) => realm.realm !== 'master'),
-        clientPrefix
+        req.user.clientPrefix
       );
 
       // Map to property format with user counts

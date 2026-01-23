@@ -2,16 +2,17 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasAuthCallback, hasJustLoggedOut, clearLogoutFlag } from '@/services/keycloak';
+import type { UserRole } from '@/types';
 
 // AICODE-NOTE: Auth guard component - redirects to Keycloak login if not authenticated
 // Uses ref to prevent multiple redirect attempts
 // Checks for auth callback to prevent redirect during token exchange
 // Checks for logout flag to show login page instead of auto-redirect
-// requireSuperAdmin: restricts route to Alto admins (client_prefix = "*")
+// requireSuperAdmin: restricts route to Alto admins (alto-admin role)
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: string;
+  requiredRole?: UserRole;
   requireSuperAdmin?: boolean;
 }
 
@@ -58,7 +59,7 @@ export function ProtectedRoute({
             Signed Out Successfully
           </h2>
           <p className="text-slate-300 mb-6">
-            You have been logged out of Alto CRM.
+            You have been logged out of Alto CERO IAM.
           </p>
           <button
             onClick={handleLogin}

@@ -1,0 +1,348 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+
+// AICODE-NOTE: Magic link rejection page
+// Admin clicks reject link from email, provides reason, user receives rejection email
+
+interface AccessRequest {
+  id: string;
+  company: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  rolePreference: string;
+  createdAt: string;
+}
+
+type PageState = 'loading' | 'ready' | 'processing' | 'success' | 'error' | 'expired';
+
+export function RejectPage() {
+  const { token } = useParams<{ token: string }>();
+  const [state, setState] = useState<PageState>('loading');
+  const [request, setRequest] = useState<AccessRequest | null>(null);
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    const fetchRequest = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/access-requests/token/${token}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 400 && data.status) {
+            setError(`This request has already been ${data.status}`);
+          } else {
+            setError(data.error || 'Failed to load request');
+          }
+          setState('expired');
+          return;
+        }
+
+        setRequest(data);
+        setState('ready');
+      } catch {
+        setError('Failed to connect to server');
+        setState('error');
+      }
+    };
+
+    if (token) {
+      fetchRequest();
+    }
+  }, [token, apiUrl]);
+
+  const handleReject = async () => {
+    if (reason.trim().length < 10) {
+      setError('Please provide a reason (at least 10 characters)');
+      return;
+    }
+
+    setState('processing');
+
+    try {
+      const response = await fetch(`${apiUrl}/access-requests/token/${token}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reject request');
+      }
+
+      setState('success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reject request');
+      setState('error');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  };
+
+  // Loading state
+  if (state === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-slate-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
+          <p className="text-slate-600">Loading request details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Expired/already processed state
+  if (state === 'expired') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-slate-100 px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Link Unavailable</h1>
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <p className="text-slate-600 mb-6">{error}</p>
+            <Link
+              to="/"
+              className="inline-block py-3 px-6 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Success state
+  if (state === 'success') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-slate-100 px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Request Rejected</h1>
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <p className="text-slate-600 mb-2">
+              The access request from <strong>{request?.firstName} {request?.lastName}</strong> has been rejected.
+            </p>
+            <p className="text-slate-500 text-sm mb-6">
+              They will receive an email with the reason you provided.
+            </p>
+            <Link
+              to="/"
+              className="inline-block py-3 px-6 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (state === 'error' && !request) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-slate-100 px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Error</h1>
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <p className="text-red-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-block py-3 px-6 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ready state - show rejection form
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-slate-100 px-4 py-12">
+      <div className="w-full max-w-lg">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">Reject Request</h1>
+          <p className="text-slate-600 mt-2">This action cannot be undone</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          {/* Request Summary */}
+          <div className="bg-slate-50 p-6 border-b border-slate-200">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
+              Request Summary
+            </h2>
+            <dl className="space-y-2">
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Name:</dt>
+                <dd className="text-slate-900 font-medium">
+                  {request?.firstName} {request?.lastName}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Email:</dt>
+                <dd className="text-slate-900">{request?.email}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Company:</dt>
+                <dd className="text-slate-900">{request?.company}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Submitted:</dt>
+                <dd className="text-slate-900">
+                  {request?.createdAt && formatDate(request.createdAt)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          {/* Rejection Form */}
+          <div className="p-6">
+            <div className="mb-6">
+              <label
+                htmlFor="reason"
+                className="block text-sm font-medium text-slate-700 mb-2"
+              >
+                Reason for Rejection *
+              </label>
+              <textarea
+                id="reason"
+                value={reason}
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  if (error) setError('');
+                }}
+                placeholder="Please provide a reason for rejecting this request..."
+                rows={4}
+                className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
+                  error
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : 'border-slate-300 focus:ring-primary-500 focus:border-primary-500'
+                }`}
+              />
+              {error && (
+                <p className="mt-1 text-sm text-red-600">{error}</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                Minimum 10 characters. This will be included in the rejection email.
+              </p>
+            </div>
+
+            <button
+              onClick={handleReject}
+              disabled={state === 'processing'}
+              className="w-full py-3 px-4 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-medium rounded-lg transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+            >
+              {state === 'processing' ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  Rejecting...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  Reject & Send Notification
+                </>
+              )}
+            </button>
+
+            <div className="mt-4 text-center">
+              <Link
+                to={`/approve/${token}`}
+                className="text-green-600 hover:text-green-700 text-sm font-medium"
+              >
+                Approve this request instead
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default RejectPage;

@@ -1,99 +1,151 @@
-# Alto Cloud IAM - Implementation Status
+# Alto CERO IAM - Implementation Status
 
-## Current State: MVP Development
+## Current State: Single Realm with Groups
+
+**Status**: Implementing group-based multi-tenancy in single `alto` realm.
+
+### Architecture
+
+| Aspect | Previous | New |
+|--------|----------|-----|
+| Realm structure | Multiple realms | Single `alto` realm |
+| Client isolation | `client_prefix` attribute | `/clients/{name}` groups |
+| Site representation | Realm = site | `/clients/{client}/sites/{name}` groups |
+| Roles | 2 (operator, admin) | 4 realm roles |
+
+### Keycloak Structure
+
+```
+master                         # Keycloak admin only (not for users)
+alto                           # All dashboard users
+├── Realm Roles:
+│   ├── alto-admin             # God mode - all clients, all sites
+│   ├── client-admin           # Manage users in assigned client
+│   ├── operator               # Access assigned sites
+│   └── viewer                 # Read-only site access
+├── Groups:
+│   └── clients/
+│       ├── marriott/
+│       │   └── sites/
+│       │       ├── site-hk
+│       │       ├── site-sg
+│       │       └── site-tokyo
+│       └── hilton/
+│           └── sites/
+│               ├── site-bangkok
+│               └── site-sydney
+└── Client: alto-cero-iam      # OIDC public client for dashboard
+```
 
 ### Deployed Infrastructure
-- Keycloak 24 running on Docker (localhost:8080)
+- Keycloak 26 running on Docker (localhost:8080)
 - PostgreSQL 15 for persistence
-- CRM Dashboard (React + Vite) on localhost:3000
+- Alto CERO IAM Dashboard (React + Vite) on localhost:3000
+- API Server (Express + Prisma) on localhost:3001
 - MailHog for email testing (localhost:8025)
 
-### Authentication Architecture
+### Test Users (Target)
 
-**IMPLEMENTED CHANGE FROM SPEC:**
-- Original spec: Separate login page in React
-- Actual implementation: Direct redirect to Keycloak themed login
-  - No React `/login` route (redirects to `/`)
-  - ProtectedRoute redirects unauthenticated users directly to Keycloak
-  - Custom Alto theme applied to Keycloak login page
+| User | Role | Groups | Access |
+|------|------|--------|--------|
+| operator@alto.cloud / operator123 | alto-admin | (none needed) | All clients, all sites |
+| admin@marriott.com / marriott123 | client-admin | /clients/marriott | All marriott sites |
+| staff@marriott.com / staff123 | operator | /clients/marriott/sites/site-hk | site-hk only |
 
-**User Types:**
-| User | Credentials | client_prefix | Access |
-|------|-------------|---------------|--------|
-| alto-operator | operator123 | `*` | All realms (super admin) |
-| marriott-admin | marriott123 | `marriott` | marriott-* realms only |
+### Token Structure
 
-**Keycloak Admin:**
-- admin / admin - Keycloak admin console only (not for CRM)
-
-### Test Realms Created
-- `master` - Keycloak admin realm
-- `alto` - Alto internal realm
-- `marriott-hk` - Marriott Hong Kong
-- `marriott-sg` - Marriott Singapore
-- `marriott-tokyo` - Marriott Tokyo
-- `hilton-bangkok` - Hilton Bangkok
-- `hilton-sydney` - Hilton Sydney
-
-### Theme Customization
-
-**Cloud theme (violet/purple)** - distinct from on-premise (cyan/teal):
-- Location: `cloud/keycloak/themes/alto/`
-- Color scheme: Violet (#8b5cf6) / Purple (#a855f7)
-- Features: "Alto Cloud IAM" branding, cloud icon
-
-**On-premise theme (cyan/teal)**:
-- Location: `keycloak/themes/alto-cero/`
-- Color scheme: Cyan (#06b6d4) / Teal (#14b8a6)
-- Features: "Alto CERO Platform" branding
+After login, JWT contains:
+```json
+{
+  "realm_access": {
+    "roles": ["client-admin"]
+  },
+  "groups": [
+    "/clients/marriott",
+    "/clients/marriott/sites/site-hk",
+    "/clients/marriott/sites/site-sg"
+  ]
+}
+```
 
 ### Code Locations
 
 ```
-cloud/
-├── crm-dashboard/src/
-│   ├── components/ProtectedRoute.tsx   # Auth guard, redirects to Keycloak
-│   ├── contexts/AuthContext.tsx        # Auth state management
-│   ├── services/keycloak.ts            # Keycloak OIDC integration
-│   ├── types/index.ts                  # AuthUser with clientPrefix
-│   └── App.tsx                         # Routes (no /login page)
-├── keycloak/themes/alto/               # Custom login theme
-├── scripts/setup-keycloak-client.sh    # Client + mapper setup
-└── docker-compose.yml                  # All services
+/
+├── alto-cero-iam/src/
+│   ├── components/
+│   │   └── ProtectedRoute.tsx   # Auth guard, role-based routing
+│   ├── contexts/AuthContext.tsx # Auth state with roles + groups
+│   ├── services/keycloak.ts     # Keycloak OIDC integration
+│   ├── types/index.ts           # AuthUser with roles, clientName, assignedSites
+│   ├── pages/
+│   │   ├── ClientsPage.tsx      # Alto Admin: manage client groups
+│   │   ├── SitesPage.tsx        # Manage sites within client
+│   │   ├── UsersPage.tsx        # User management
+│   │   ├── AccessQueuePage.tsx  # Approval queue
+│   │   └── SitePickerPage.tsx   # Operator/Viewer: site selection
+│   └── App.tsx                  # Routes with role guards
+├── api/src/
+│   ├── routes/
+│   │   ├── clients.ts           # Client group CRUD
+│   │   ├── sites.ts             # Site group CRUD
+│   │   ├── users.ts             # User management
+│   │   └── access-requests.ts   # Access request workflow
+│   ├── middleware/auth.ts       # JWT validation + role/group extraction
+│   └── services/                # Business logic
+├── keycloak/
+│   ├── themes/alto/             # Custom login theme
+│   └── realms/alto-realm.json   # Realm configuration with groups
+├── terraform/                   # Keycloak configuration
+├── scripts/
+│   └── setup-keycloak.sh        # Roles + groups setup script
+└── docker-compose.yml           # All services
 ```
 
-### Key Implementation Details
+### Implementation Progress
 
-**client_prefix attribute:**
-- Stored as Keycloak user attribute
-- Mapped to access token via protocol mapper
-- Values: `*` (super admin), `marriott`, `hilton`, etc.
-- Used by CRM to filter visible realms
+**Phase 1: Core Security** (DONE)
+- [x] MFA Email OTP configuration (Terraform module)
+- [x] Admin login with Keycloak OIDC
+- [x] Custom Alto theme for login page
 
-**Authentication Flow:**
-1. User visits localhost:3000
-2. ProtectedRoute checks auth via keycloak-js
-3. If not authenticated, redirects to Keycloak login
-4. User logs in (with custom Alto theme)
-5. Keycloak redirects back to CRM with auth code
-6. keycloak-js exchanges code for tokens
-7. AuthContext extracts user info + client_prefix
-8. CRM filters realms based on client_prefix
+**Phase 2: Infrastructure** (IN PROGRESS)
+- [ ] Create realm roles (alto-admin, client-admin, operator, viewer)
+- [ ] Create group hierarchy (/clients/{client}/sites/{site})
+- [ ] Add groups protocol mapper to include groups in token
+- [ ] Update auth middleware to extract roles + groups
+- [ ] Update dashboard for 4-role routing
 
-### Pending Features
-- [ ] Realm filtering in PropertiesPage based on clientPrefix
-- [ ] Access Request form and approval queue
-- [ ] User management per realm
-- [ ] MFA Email OTP configuration
+**Phase 3: Access Workflow** (PENDING)
+- [ ] Update access request form with role selection
+- [ ] Approval flow with client + role + site assignment
+- [ ] Welcome email with role-appropriate instructions
+
+**Phase 4: User Operations** (PENDING)
+- [ ] User management with site assignment
+- [ ] User enable/disable
+- [ ] Role-based permission checks
 
 ### Quick Start
+
 ```bash
-cd cloud
-docker compose up -d
-./scripts/setup-keycloak-client.sh
+# Start all services with hot-reload
+docker compose --profile dev up -d
+
+# Setup Keycloak roles and groups
+./scripts/setup-keycloak.sh
 
 # Access:
-# - CRM: http://localhost:3000 (login: alto-operator / operator123)
-# - Keycloak Admin: http://localhost:8080/admin (login: admin / admin)
+# - Dashboard: http://localhost:3000
+# - Keycloak Admin: http://localhost:8080/admin (admin / admin)
 # - MailHog: http://localhost:8025
 ```
+
+### Setup Script Tasks
+
+The `setup-keycloak.sh` script will:
+1. Create realm roles: alto-admin, client-admin, operator, viewer
+2. Create group hierarchy: /clients/marriott/sites/*, /clients/hilton/sites/*
+3. Create OIDC client: alto-cero-iam
+4. Add protocol mapper: groups (include in token)
+5. Create test users with role + group assignments

@@ -7,8 +7,8 @@ import type { AuthUser } from '@/types';
 
 const keycloakConfig = {
   url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080',
-  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'master',
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'alto-crm',
+  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'alto',
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'alto-cero-iam',
 };
 
 // Singleton Keycloak instance
@@ -84,7 +84,7 @@ export async function initKeycloak(): Promise<boolean> {
 
 export function login(): void {
   const keycloak = getKeycloakInstance();
-  // AICODE-NOTE: Explicitly set redirectUri to ensure we return to CRM after login
+  // AICODE-NOTE: Explicitly set redirectUri to ensure we return to dashboard after login
   keycloak.login({
     redirectUri: window.location.origin + '/',
   });
@@ -132,6 +132,42 @@ export async function refreshToken(): Promise<boolean> {
   }
 }
 
+// AICODE-NOTE: Valid user roles in the system
+const VALID_ROLES = ['alto-admin', 'client-admin', 'operator', 'viewer'] as const;
+type ValidRole = (typeof VALID_ROLES)[number];
+
+// Helper to extract client name from groups
+// Groups follow pattern: /clients/{clientName}/...
+function extractClientName(groups: string[]): string | undefined {
+  for (const group of groups) {
+    const match = group.match(/^\/clients\/([^/]+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
+}
+
+// Helper to extract assigned sites from groups
+// Sites follow pattern: /clients/{clientName}/sites/{siteName}
+function extractAssignedSites(groups: string[]): string[] {
+  const sites: string[] = [];
+  for (const group of groups) {
+    const match = group.match(/^\/clients\/[^/]+\/sites\/([^/]+)$/);
+    if (match) {
+      sites.push(match[1]);
+    }
+  }
+  return sites;
+}
+
+// Helper to filter roles to only valid UserRole values
+function filterValidRoles(roles: string[]): ValidRole[] {
+  return roles.filter((role): role is ValidRole =>
+    VALID_ROLES.includes(role as ValidRole)
+  );
+}
+
 export function getUserFromKeycloak(): AuthUser | null {
   const keycloak = getKeycloakInstance();
 
@@ -146,25 +182,19 @@ export function getUserFromKeycloak(): AuthUser | null {
     given_name?: string;
     family_name?: string;
     realm_access?: { roles?: string[] };
-    resource_access?: Record<string, { roles?: string[] }>;
-    client_prefix?: string | string[];
+    realm_roles?: string[];    // Custom mapper: realm roles array
+    groups?: string[];         // Custom mapper: group paths array
   };
 
-  // Extract roles from both realm and resource access
-  const realmRoles = tokenParsed.realm_access?.roles || [];
-  const clientRoles =
-    tokenParsed.resource_access?.[keycloakConfig.clientId]?.roles || [];
-  const roles = [...new Set([...realmRoles, ...clientRoles])];
+  // AICODE-NOTE: Extract roles from realm_roles custom claim or realm_access
+  // Prefer realm_roles (our custom mapper) over realm_access (standard claim)
+  const rawRoles = tokenParsed.realm_roles || tokenParsed.realm_access?.roles || [];
+  const roles = filterValidRoles(rawRoles);
 
-  // AICODE-NOTE: Extract client_prefix for realm filtering
-  // "*" means super admin (Alto operator) - can see all realms
-  // "marriott" means client admin - can only see marriott-* realms
-  let clientPrefix: string | undefined;
-  if (tokenParsed.client_prefix) {
-    clientPrefix = Array.isArray(tokenParsed.client_prefix)
-      ? tokenParsed.client_prefix[0]
-      : tokenParsed.client_prefix;
-  }
+  // AICODE-NOTE: Extract groups and derive client/site access
+  const groups = tokenParsed.groups || [];
+  const clientName = extractClientName(groups);
+  const assignedSites = extractAssignedSites(groups);
 
   return {
     id: tokenParsed.sub || '',
@@ -173,7 +203,9 @@ export function getUserFromKeycloak(): AuthUser | null {
     firstName: tokenParsed.given_name,
     lastName: tokenParsed.family_name,
     roles,
-    clientPrefix,
+    groups,
+    clientName,
+    assignedSites,
   };
 }
 

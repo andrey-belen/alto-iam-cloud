@@ -8,7 +8,7 @@
 - IT administrators responsible for access control across sites
 
 ### Problem
-- Clients need centralized management of operator/staff access across multiple properties
+- Clients need centralized management of operator/staff access across multiple sites
 - Clear data separation required between different clients
   - Marriott administrators cannot see Hilton's users
   - Each client operates in complete isolation
@@ -18,159 +18,327 @@
 
 ### Core Solution Proposition
 - Multi-tenant identity management system built on Keycloak
-- Each client gets a dedicated dashboard to manage users across their properties
+- Cloud Keycloak serves as source of truth for all users
+- Single realm with group-based client and site isolation
 - Keycloak handles authentication and MFA (Email OTP)
-- Automatic sync capability to on-premise deployments (Phase 2)
+- SSO capability to on-premise sites (Phase 2)
+- User sync to on-premise deployments (Phase 3)
 
-## Solution Design
+## Architecture
 
-### Project Structure
+### Cloud Architecture
+
 ```
-alto-iam-sandbox/           # Existing on-premise system (unchanged)
-└── cloud/                  # NEW: Cloud deployment subfolder
-    ├── docker-compose.yml  # Keycloak + PostgreSQL + CRM
-    ├── Caddyfile           # HTTPS configuration
-    ├── terraform/          # Keycloak realm configuration
-    ├── crm-dashboard/      # React admin dashboard
-    └── keycloak/           # Theme customizations
+┌─────────────────────────────────────────────────────────────┐
+│                      CLOUD                                  │
+│  ┌───────────────┐    ┌───────────────┐                    │
+│  │   Keycloak    │    │   Dashboard   │                    │
+│  │  (alto realm) │◄──►│   (React)     │                    │
+│  └───────────────┘    └───────────────┘                    │
+└─────────────────────────────────────────────────────────────┘
+          │
+          │ Identity Broker (Phase 2)
+          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      SITE                                   │
+│  ┌───────────────┐    ┌───────────────┐                    │
+│  │   Keycloak    │◄──►│  CERO Stack   │                    │
+│  │ (local copy)  │    │  (Django/FE)  │                    │
+│  └───────────────┘    └───────────────┘                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Core User Flows
+### Single Realm with Groups
 
-**Flow A: Alto Operator (Super Admin)**
-1. Alto operator logs into CRM dashboard (master realm)
+```
+alto realm
+├── Realm Roles:
+│   ├── alto-admin      (god mode - all clients, all sites)
+│   ├── client-admin    (manage users in assigned client)
+│   ├── operator        (access assigned sites only)
+│   └── viewer          (read-only access to assigned sites)
+├── Groups:
+│   └── clients/
+│       ├── marriott/
+│       │   └── sites/
+│       │       ├── site-hk
+│       │       ├── site-sg
+│       │       └── site-tokyo
+│       └── hilton/
+│           └── sites/
+│               ├── site-bangkok
+│               └── site-sydney
+└── Users:
+    ├── operator@alto.cloud    (alto-admin role)
+    ├── admin@marriott.com     (client-admin role, /clients/marriott group)
+    └── staff@marriott.com     (operator role, /clients/marriott/sites/site-hk group)
+```
+
+## Data Model
+
+### Core Entities
+
+**Client (Group)**
+- Top-level group under `/clients/`
+- Represents a client organization (e.g., `marriott`, `hilton`)
+- Contains site groups and users
+- Access controlled by group membership
+
+**Site (Group)**
+- Nested under `/clients/{client}/sites/`
+- Represents a physical site/building
+- Users can be assigned to multiple sites
+- Example: `/clients/marriott/sites/site-hk`
+
+**User**
+- All users in single `alto` realm
+- Has one role (alto-admin/client-admin/operator/viewer)
+- Client determined by `/clients/{client}` group membership
+- Sites determined by `/clients/{client}/sites/{site}` group membership
+
+**Access Request** (separate storage, not in Keycloak)
+- Pending approval queue
+- Contains: name, email, company, requested sites, requested role
+
+### Entity Relationships
+
+```
+Client Group (/clients/{client})
+├── 1:N → Site Groups (/clients/{client}/sites/{site})
+├── 1:N → Users (via group membership)
+└── 1:N → Access Requests (pending)
+
+User
+├── 1:1 → Role (realm role assignment)
+├── 1:1 → Client (group membership)
+└── 1:N → Sites (group membership)
+
+Site Group
+├── N:1 → Client
+└── N:M → Users (group membership)
+```
+
+## Roles & Permissions
+
+### Alto Admin (god mode)
+
+Scope: All clients, all sites
+
+| Permission | Description |
+|------------|-------------|
+| Client CRUD | Create/delete client groups |
+| User CRUD (all) | Manage users across all clients |
+| Create admins | Only role that can assign client-admin |
+| Access request approval (all) | Approve any pending request |
+| Site CRUD | Manage site groups across all clients |
+
+### Client Admin
+
+Scope: Own client group only
+
+| Permission | Description |
+|------------|-------------|
+| User CRUD | Create/edit/disable users in their client |
+| Create operator/viewer | Cannot assign client-admin role |
+| Access request approval | Own client's requests only |
+| Site assignment | Assign users to sites within their client |
+| Enter sites | SSO to any site in their client (Phase 2) |
+
+### Operator
+
+Scope: Assigned sites only
+
+| Permission | Description |
+|------------|-------------|
+| Enter sites | SSO to assigned sites only (Phase 2) |
+| Profile management | Change password, 2FA |
+| Site actions | Control equipment, ack alarms, schedules |
+
+### Viewer
+
+Scope: Assigned sites only
+
+| Permission | Description |
+|------------|-------------|
+| Enter sites | SSO to assigned sites, read-only (Phase 2) |
+| Profile management | Change password, 2FA |
+| View dashboards | Read-only access |
+
+## User Flows
+
+### Flow A: Alto Admin (Super Admin)
+1. Alto admin logs into dashboard (single login URL)
 2. Views all access requests across all clients
-3. Approves/rejects requests, assigns user to specific property
-4. Manages all realms and users
+3. Approves/rejects requests, assigns client + role + sites
+4. Manages all clients, users, and sites
 
-**Flow B: Client Admin**
-1. Client admin logs into CRM dashboard
-2. Dashboard displays only their properties (filtered by client prefix)
-3. Admin selects a property to manage
-4. Admin views, enables/disables users for that property
-5. Users can then log into on-premise Alto CERO at that property with MFA
+### Flow B: Client Admin
+1. Client admin logs into dashboard (same login URL)
+2. Dashboard displays only their client's sites (filtered by group)
+3. Admin manages users: view, enable/disable, assign to sites
+4. Admin approves access requests for their client
+5. Users can then log into on-premise Alto CERO at assigned sites with MFA
 
-**Flow C: New User Access Request**
+### Flow C: New User Access Request
 1. User visits public "Request Access" page
 2. Fills form: company name, full name, email, phone, role/position
 3. Submits request (stored in pending queue)
-4. Alto operator receives notification
-5. Operator reviews, approves, and assigns to property
+4. Alto admin (or client admin for their client) receives notification
+5. Approver reviews, approves with: client + role + sites
 6. User receives email with credentials and MFA setup instructions
 
-### Core MVP Feature
-- Multi-tenant property management with client isolation
-- Realm-per-property architecture
-  - Each property gets its own Keycloak realm (e.g., `marriott-hk`, `hilton-bangkok`)
-  - Dashboard filters realms by client prefix
-  - Complete data separation enforced at infrastructure level
-- Access Request workflow (no self-registration)
-  - Public form for requesting access
-  - Alto operator approval queue
-  - Property assignment during approval
-- Discrete capabilities:
-  - Alto operator authentication via Keycloak master realm
-  - Client admin authentication via client-specific realm
-  - Realm listing filtered by client prefix
-  - User management per realm (view, enable/disable)
-  - MFA enforcement on all user logins
-
-### Supporting Features
-- Email OTP MFA for all logins
-  - Primary security feature
-  - Must be reliable and fast
-- Access Request Management
-  - Public request form (company, name, email, phone, role)
-  - Pending requests queue for Alto operator
-  - Approve with property assignment
-  - Reject with reason
-  - Email notification on approval/rejection
-- User enable/disable without deletion
-  - Preserve audit trail
-  - Quick access revocation
-- Integration endpoint for on-premise sync (Phase 2)
-  - Webhook-based user provisioning
-  - Deferred to post-MVP
+### Flow D: Operator/Viewer
+1. Operator/Viewer logs into dashboard (same login URL)
+2. Sees site picker with only their assigned sites
+3. Clicks "Enter Site" to SSO into on-premise CERO (Phase 2)
 
 ## Technical Requirements
 
 ### Tech Stack
-- **Identity Provider**: Keycloak 24+
-  - Already used in Alto stack
-  - Proven multi-tenant capabilities
+- **Identity Provider**: Keycloak 26+
+  - Single `alto` realm for all users
+  - Group-based multi-tenancy
   - Built-in MFA support
-- **CRM Dashboard**: React + Tailwind CSS
+- **Dashboard**: React + Tailwind CSS + Vite
   - Fast development
   - Responsive design
   - Component reusability
+- **API**: Express + Prisma + PostgreSQL
+  - Access request storage
+  - Keycloak Admin API proxy
 - **Deployment**: Docker Compose
   - Single-command deployment
   - Easy VM provisioning
 - **HTTPS**: Caddy
   - Automatic Let's Encrypt certificates
   - Zero-config TLS
-- **Email**: Google SMTP (Gmail)
+- **Email**: SMTP (MailHog for dev, Google SMTP for prod)
   - For MFA OTP delivery
-  - App password authentication
-  - Reliable and free
-- **Database**: PostgreSQL 15
-  - Keycloak persistence
-  - Reliable and performant
+  - Welcome emails and notifications
+
+### Keycloak Structure
+
+```
+master                    # Keycloak admin only (not for users)
+alto                      # All dashboard users
+├── Realm Roles:
+│   ├── alto-admin
+│   ├── client-admin
+│   ├── operator
+│   └── viewer
+├── Groups:
+│   └── clients/
+│       ├── marriott/
+│       │   └── sites/
+│       │       ├── site-hk
+│       │       ├── site-sg
+│       │       └── site-tokyo
+│       └── hilton/
+│           └── sites/
+│               ├── site-bangkok
+│               └── site-sydney
+└── Client: alto-cero-iam (OIDC public client)
+```
+
+### Token Structure
+
+```json
+{
+  "realm_access": {
+    "roles": ["client-admin"]
+  },
+  "groups": [
+    "/clients/marriott",
+    "/clients/marriott/sites/site-hk",
+    "/clients/marriott/sites/site-sg"
+  ]
+}
+```
 
 ### Technical Constraints
-- Cloud code in `cloud/` subfolder (separate from on-premise system)
-- Must integrate with existing on-premise Keycloak deployments at client sites
 - All operations via Keycloak Admin REST API
 - Access requests stored in PostgreSQL (separate from Keycloak)
-- Cloud VM deployment (Azure)
-- Single VM deployment for MVP (can scale later)
+- Client/site isolation via Keycloak groups
+- Role stored as Keycloak realm role assignment
+- Groups included in token via protocol mapper
+- Cloud VM deployment (Azure) for production
 
-### Measurable Constraints
-- Support 10+ clients with 20+ properties each (200+ realms)
-- Sub-second API response times for dashboard operations
-- 99.9% uptime for authentication services
-- MFA email delivery under 10 seconds
+### Security Constraints
+- Only Alto admin can assign client-admin role
+- Client admins cannot escalate to alto-admin
+- Users can only access sites they are assigned to (group membership)
+- All logins require 2FA (email for MVP)
+- Access tokens short-lived (15 min), refresh tokens rotated
+- Single login URL - no realm selection needed
 
-## UX Details
+## MVP Phases
+
+### Phase 1: Dashboard (No Site Integration) - CURRENT
+
+**Included:**
+- Cloud Keycloak with single realm + group hierarchy
+- Alto admin dashboard (full features)
+- Client admin dashboard (user/site management)
+- Operator/Viewer dashboard (site picker only)
+- Access request flow with client + role + site assignment
+- Site groups as metadata (no live connection)
+- 2FA via email
+
+**Mocked/Disabled:**
+- "Enter Site" button (placeholder)
+- Site status indicators
+- User sync
+
+### Phase 2: Single Site Integration
+
+**Included:**
+- Identity broker configuration (Cloud → Site)
+- SSO flow (Cloud → Site)
+- Direct site login support
+- "Enter Site" button functional
+
+### Phase 3: User Sync
+
+**Included:**
+- Sync service implementation
+- Event-driven sync (Cloud → Site)
+- Multi-site support
+
+### Phase 4: Production Hardening
+
+**Included:**
+- Audit logging
+- Monitoring/alerting
+- Backup/recovery
+
+## UX Requirements
 
 ### Platform Strategy
 - Desktop-first admin dashboard
-  - Primary use case is office-based administration
-  - Responsive but optimized for 1280px+ screens
+- Primary use case is office-based administration
+- Responsive but optimized for 1280px+ screens
 
 ### Interface Requirements
 - Clean professional design
-- White background (#FFFFFF)
-- Blue accent (#0ea5e9) for primary actions
-- Green accent (#10b981) for success states
-- Property cards showing:
-  - Property name and realm ID
-  - User count
-  - Active/disabled status
-- Access Request form (public page):
-  - Required: company name, full name, email, phone, role/position
-  - Optional: notes/reason for access
-- Access Request queue (Alto operator view):
-  - List pending requests with company, name, date
-  - Approve modal: select property to assign
-  - Reject modal: reason field
-- Clear visual separation between clients in super-admin view
-- All views must handle states:
-  - Loading (spinner)
-  - Empty (helpful message)
-  - Error (actionable message)
-  - Success (confirmation)
+- Violet/Purple accent (#8b5cf6) for Alto branding
+- Single login URL for all users
+- Role-based navigation:
+  - Alto Admin: All Clients, All Users, Access Queue, Sites
+  - Client Admin: Users, Sites, Access Queue (filtered to their client)
+  - Operator/Viewer: Site Picker only
+- All views must handle states: Loading, Empty, Error, Success
 
 ## Non-Goals (Out of Scope for MVP)
 
-- Self-registration (all users must be approved by Alto operator)
-- Client admins creating users directly (only Alto operator can approve/create)
-- On-premise sync automation (Phase 2)
+- Self-registration (all users must be approved)
+- On-premise sync automation (Phase 3)
 - Custom branding per client
 - Advanced analytics/reporting
 - Mobile app
 - SSO integration with third-party IdPs
-- Automated user provisioning from HR systems
+- Vault integration for site credentials
+- Session invalidation automation
+- Multiple realms (single realm is sufficient for MVP)
 
 ## Success Metrics
 
@@ -183,6 +351,7 @@ alto-iam-sandbox/           # Existing on-premise system (unchanged)
 
 1. **MFA** - Most important, must be reliable
 2. **Fast VM deployment** - Single command, minimal configuration
-3. **Access Request workflow** - Public form → Alto operator approval → user creation
-4. **Client isolation** - Hard separation between clients
-5. **User management** - View, enable/disable operations
+3. **Access Request workflow** - Public form → approval → user creation with client + role + sites
+4. **Client isolation** - Group-based separation between clients
+5. **Site group management** - Assign users to sites
+6. **Role-based access** - 4-tier role system

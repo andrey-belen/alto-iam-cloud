@@ -10,11 +10,13 @@ import { SessionsPage } from '@/pages/SessionsPage';
 import { AuditPage } from '@/pages/AuditPage';
 import { AccessQueuePage } from '@/pages/AccessQueuePage';
 import { RequestAccessPage } from '@/pages/RequestAccessPage';
+import { ApprovePage } from '@/pages/ApprovePage';
+import { RejectPage } from '@/pages/RejectPage';
 
-// AICODE-NOTE: Alto CRM Dashboard routing structure with sidebar layout
+// AICODE-NOTE: Alto CERO IAM Dashboard routing structure with sidebar layout
 // - Root (/) shows dashboard overview
+// - Public routes: /request-access, /approve/:token, /reject/:token
 // - All protected routes wrapped in DashboardLayout (sidebar + main content)
-// - RequestAccess is public (no auth required)
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
       {/* Public routes */}
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/request-access" element={<RequestAccessPage />} />
+      <Route path="/approve/:token" element={<ApprovePage />} />
+      <Route path="/reject/:token" element={<RejectPage />} />
 
       {/* Protected routes with sidebar layout */}
       <Route

@@ -1,195 +1,263 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('firstName','lastName','email','username','password','password-confirm','company','position','phone'); section>
+<@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
         ${msg("registerTitle")}
     <#elseif section = "form">
-        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
-
-            <#-- First Name -->
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName"
-                           value="${(register.formData.firstName!'')}"
-                           aria-invalid="<#if messagesPerField.existsError('firstName')>true</#if>"
-                           autofocus required />
-                    <#if messagesPerField.existsError('firstName')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('firstName'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
+        <#-- Success message (hidden by default) -->
+        <div id="success-message" class="alto-alert alto-alert-success" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <div>
+                <strong>${msg("registrationPendingTitle")}</strong><br>
+                ${msg("registrationPendingMessage")}
             </div>
+        </div>
 
-            <#-- Last Name -->
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")} *</label>
+        <#-- Error message (hidden by default) -->
+        <div id="error-message" class="alto-alert alto-alert-error" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span id="error-text">An error occurred. Please try again.</span>
+        </div>
+
+        <form id="kc-register-form" class="${properties.kcFormClass!}">
+            <#-- Name fields in a row -->
+            <div class="alto-name-row">
+                <div class="alto-name-field">
+                    <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")} *</label>
+                    <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName"
+                           placeholder="John"
+                           autofocus required />
+                    <span id="firstName-error" class="kc-feedback-text" style="display: none;"></span>
                 </div>
-                <div class="${properties.kcInputWrapperClass!}">
+
+                <div class="alto-name-field">
+                    <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")} *</label>
                     <input type="text" id="lastName" class="${properties.kcInputClass!}" name="lastName"
-                           value="${(register.formData.lastName!'')}"
-                           aria-invalid="<#if messagesPerField.existsError('lastName')>true</#if>"
+                           placeholder="Smith"
                            required />
-                    <#if messagesPerField.existsError('lastName')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('lastName'))?no_esc}
-                        </span>
-                    </#if>
+                    <span id="lastName-error" class="kc-feedback-text" style="display: none;"></span>
                 </div>
             </div>
 
             <#-- Email -->
             <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="email" class="${properties.kcLabelClass!}">${msg("email")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="email" id="email" class="${properties.kcInputClass!}" name="email"
-                           value="${(register.formData.email!'')}"
-                           aria-invalid="<#if messagesPerField.existsError('email')>true</#if>"
-                           autocomplete="email" required />
-                    <#if messagesPerField.existsError('email')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('email'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
+                <label for="email" class="${properties.kcLabelClass!}">${msg("email")} *</label>
+                <input type="email" id="email" class="${properties.kcInputClass!}" name="email"
+                       placeholder="john.smith@company.com"
+                       autocomplete="email" required />
+                <span id="email-error" class="kc-feedback-text" style="display: none;"></span>
             </div>
 
             <#-- Company -->
             <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="user.attributes.company" class="${properties.kcLabelClass!}">${msg("company")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="user.attributes.company" class="${properties.kcInputClass!}"
-                           name="user.attributes.company"
-                           value="${(register.formData['user.attributes.company']!'')}"
-                           aria-invalid="<#if messagesPerField.existsError('user.attributes.company')>true</#if>"
-                           required />
-                    <#if messagesPerField.existsError('user.attributes.company')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('user.attributes.company'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
-            </div>
-
-            <#-- Position -->
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="user.attributes.position" class="${properties.kcLabelClass!}">${msg("position")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="user.attributes.position" class="${properties.kcInputClass!}"
-                           name="user.attributes.position"
-                           value="${(register.formData['user.attributes.position']!'')}"
-                           aria-invalid="<#if messagesPerField.existsError('user.attributes.position')>true</#if>"
-                           required />
-                    <#if messagesPerField.existsError('user.attributes.position')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('user.attributes.position'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
+                <label for="company" class="${properties.kcLabelClass!}">${msg("company")} *</label>
+                <input type="text" id="company" class="${properties.kcInputClass!}" name="company"
+                       placeholder="Acme Corporation"
+                       required />
+                <span id="company-error" class="kc-feedback-text" style="display: none;"></span>
             </div>
 
             <#-- Phone -->
             <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="user.attributes.phone" class="${properties.kcLabelClass!}">${msg("phone")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="tel" id="user.attributes.phone" class="${properties.kcInputClass!}"
-                           name="user.attributes.phone"
-                           value="${(register.formData['user.attributes.phone']!'')}"
-                           aria-invalid="<#if messagesPerField.existsError('user.attributes.phone')>true</#if>"
-                           placeholder="+66 XX XXX XXXX"
-                           required />
-                    <#if messagesPerField.existsError('user.attributes.phone')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('user.attributes.phone'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
+                <label for="phone" class="${properties.kcLabelClass!}">Phone *</label>
+                <input type="tel" id="phone" class="${properties.kcInputClass!}" name="phone"
+                       placeholder="+1 (555) 123-4567"
+                       required />
+                <span id="phone-error" class="kc-feedback-text" style="display: none;"></span>
             </div>
 
-            <#if !realm.registrationEmailAsUsername>
-                <#-- Username (hidden if email is username) -->
-                <div class="${properties.kcFormGroupClass!}">
-                    <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="username" class="${properties.kcLabelClass!}">${msg("username")} *</label>
-                    </div>
-                    <div class="${properties.kcInputWrapperClass!}">
-                        <input type="text" id="username" class="${properties.kcInputClass!}" name="username"
-                               value="${(register.formData.username!'')}"
-                               aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"
-                               autocomplete="username" required />
-                        <#if messagesPerField.existsError('username')>
-                            <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                                ${kcSanitize(messagesPerField.get('username'))?no_esc}
-                            </span>
-                        </#if>
-                    </div>
-                </div>
-            </#if>
-
-            <#-- Password -->
+            <#-- Role Preference -->
             <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="password" class="${properties.kcLabelClass!}">${msg("password")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password" class="${properties.kcInputClass!}" name="password"
-                           aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
-                           autocomplete="new-password" required />
-                    <#if messagesPerField.existsError('password')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('password'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
+                <label for="rolePreference" class="${properties.kcLabelClass!}">Requested Role *</label>
+                <select id="rolePreference" class="${properties.kcInputClass!}" name="rolePreference" required>
+                    <option value="operator">Operator - Can control equipment and manage schedules</option>
+                    <option value="viewer">Viewer - Read-only access to dashboards</option>
+                </select>
+                <span id="rolePreference-error" class="kc-feedback-text" style="display: none;"></span>
             </div>
 
-            <#-- Confirm Password -->
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")} *</label>
-                </div>
-                <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password-confirm" class="${properties.kcInputClass!}" name="password-confirm"
-                           aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>"
-                           autocomplete="new-password" required />
-                    <#if messagesPerField.existsError('password-confirm')>
-                        <span class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                            ${kcSanitize(messagesPerField.get('password-confirm'))?no_esc}
-                        </span>
-                    </#if>
-                </div>
+            <div id="kc-form-buttons" class="alto-form-buttons">
+                <button type="submit" id="submit-btn" class="alto-btn-primary">
+                    <span id="submit-text">${msg("doRegister")}</span>
+                    <span id="submit-spinner" style="display: none;">
+                        <svg class="animate-spin" style="width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
             </div>
 
-            <#if recaptchaRequired??>
-                <div class="form-group">
-                    <div class="${properties.kcInputWrapperClass!}">
-                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
-                    </div>
-                </div>
-            </#if>
-
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                           type="submit" value="${msg("doRegister")}"/>
-                </div>
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
-                        <span><a href="${url.loginUrl}">${kcSanitize(msg("backToLogin"))?no_esc}</a></span>
-                    </div>
-                </div>
+            <div class="alto-form-footer">
+                <span>${msg("backToLogin")} </span>
+                <a href="${url.loginUrl}">${msg("doLogIn")}</a>
             </div>
         </form>
+
+        <style>
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            #submit-spinner svg {
+                animation: spin 1s linear infinite;
+            }
+        </style>
+
+        <script>
+            (function() {
+                const form = document.getElementById('kc-register-form');
+                const submitBtn = document.getElementById('submit-btn');
+                const submitText = document.getElementById('submit-text');
+                const submitSpinner = document.getElementById('submit-spinner');
+                const successMessage = document.getElementById('success-message');
+                const errorMessage = document.getElementById('error-message');
+                const errorText = document.getElementById('error-text');
+
+                // API URL - in production this would be the same domain, in dev it's a different port
+                // Check if we're on Keycloak domain (port 8080) and redirect to API (port 3001)
+                const currentHost = window.location.hostname;
+                const currentPort = window.location.port;
+                let API_URL;
+                if (currentPort === '8080') {
+                    // Development: Keycloak on 8080, API on 3001
+                    API_URL = 'http://' + currentHost + ':3001/api/access-requests';
+                } else {
+                    // Production: same domain, proxied through Caddy
+                    API_URL = '/api/access-requests';
+                }
+
+                function showError(message) {
+                    errorText.textContent = message;
+                    errorMessage.style.display = 'flex';
+                    successMessage.style.display = 'none';
+                }
+
+                function showSuccess() {
+                    successMessage.style.display = 'flex';
+                    errorMessage.style.display = 'none';
+                    form.style.display = 'none';
+                }
+
+                function showFieldError(fieldId, message) {
+                    const field = document.getElementById(fieldId);
+                    const errorSpan = document.getElementById(fieldId + '-error');
+                    if (field && errorSpan) {
+                        field.setAttribute('aria-invalid', 'true');
+                        errorSpan.textContent = message;
+                        errorSpan.style.display = 'block';
+                    }
+                }
+
+                function clearFieldErrors() {
+                    const fields = ['firstName', 'lastName', 'email', 'company', 'phone', 'rolePreference'];
+                    fields.forEach(function(fieldId) {
+                        const field = document.getElementById(fieldId);
+                        const errorSpan = document.getElementById(fieldId + '-error');
+                        if (field) {
+                            field.setAttribute('aria-invalid', 'false');
+                        }
+                        if (errorSpan) {
+                            errorSpan.style.display = 'none';
+                        }
+                    });
+                    errorMessage.style.display = 'none';
+                }
+
+                function setLoading(loading) {
+                    submitBtn.disabled = loading;
+                    submitText.style.display = loading ? 'none' : 'inline';
+                    submitSpinner.style.display = loading ? 'inline' : 'none';
+                }
+
+                function validateForm(data) {
+                    let isValid = true;
+                    clearFieldErrors();
+
+                    if (!data.firstName || data.firstName.trim().length < 1) {
+                        showFieldError('firstName', 'First name is required');
+                        isValid = false;
+                    }
+
+                    if (!data.lastName || data.lastName.trim().length < 1) {
+                        showFieldError('lastName', 'Last name is required');
+                        isValid = false;
+                    }
+
+                    if (!data.email || !data.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                        showFieldError('email', 'Please enter a valid email address');
+                        isValid = false;
+                    }
+
+                    if (!data.company || data.company.trim().length < 1) {
+                        showFieldError('company', 'Company name is required');
+                        isValid = false;
+                    }
+
+                    if (!data.phone || data.phone.trim().length < 6) {
+                        showFieldError('phone', 'Please enter a valid phone number');
+                        isValid = false;
+                    }
+
+                    if (!data.rolePreference) {
+                        showFieldError('rolePreference', 'Please select a role');
+                        isValid = false;
+                    }
+
+                    return isValid;
+                }
+
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const data = {
+                        firstName: document.getElementById('firstName').value.trim(),
+                        lastName: document.getElementById('lastName').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        company: document.getElementById('company').value.trim(),
+                        phone: document.getElementById('phone').value.trim(),
+                        rolePreference: document.getElementById('rolePreference').value
+                    };
+
+                    if (!validateForm(data)) {
+                        return;
+                    }
+
+                    setLoading(true);
+
+                    fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(function(response) {
+                        return response.json().then(function(body) {
+                            return { ok: response.ok, body: body };
+                        });
+                    })
+                    .then(function(result) {
+                        setLoading(false);
+                        if (result.ok) {
+                            showSuccess();
+                        } else {
+                            showError(result.body.message || 'Failed to submit request. Please try again.');
+                        }
+                    })
+                    .catch(function(error) {
+                        setLoading(false);
+                        console.error('Request failed:', error);
+                        showError('Network error. Please check your connection and try again.');
+                    });
+                });
+            })();
+        </script>
     </#if>
 </@layout.registrationLayout>

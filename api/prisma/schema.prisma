@@ -15,24 +15,24 @@ datasource db {
 // ============================================================================
 
 model AccessRequest {
-  id           String              @id @default(cuid())
-  propertyId   String              @map("property_id")
-  propertyName String              @map("property_name")
-  firstName    String              @map("first_name")
-  lastName     String              @map("last_name")
-  email        String
-  phone        String?
-  unit         String?
-  reason       String?
-  status       AccessRequestStatus @default(pending)
-  processedBy  String?             @map("processed_by")
-  processedAt  DateTime?           @map("processed_at")
-  createdAt    DateTime            @default(now()) @map("created_at")
-  updatedAt    DateTime            @updatedAt @map("updated_at")
+  id             String              @id @default(cuid())
+  company        String
+  firstName      String              @map("first_name")
+  lastName       String              @map("last_name")
+  email          String
+  phone          String
+  rolePreference String              @map("role_preference") // 'operator' | 'viewer'
+  approvalToken  String?             @unique @map("approval_token")
+  tokenExpiresAt DateTime?           @map("token_expires_at")
+  status         AccessRequestStatus @default(pending)
+  processedBy    String?             @map("processed_by")
+  processedAt    DateTime?           @map("processed_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
 
   @@index([status])
-  @@index([propertyId])
   @@index([email])
+  @@index([approvalToken])
   @@index([createdAt])
   @@map("access_requests")
 }

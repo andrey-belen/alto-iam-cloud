@@ -3,9 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 // AICODE-NOTE: Login page - redirects to Keycloak for authentication
+// Request Access link goes directly to Keycloak themed registration page
 
 export function LoginPage() {
   const { isAuthenticated, isLoading, login } = useAuth();
+
+  // Build Keycloak registration URL
+  const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080';
+  const realm = import.meta.env.VITE_KEYCLOAK_REALM || 'alto';
+  const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'alto-cero-iam';
+  const registrationUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/registrations?client_id=${clientId}&response_type=code&scope=openid&redirect_uri=${encodeURIComponent(window.location.origin)}`;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,7 +50,7 @@ export function LoginPage() {
           <div className="w-16 h-16 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-white font-bold text-3xl">A</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Alto CRM</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Alto CERO IAM</h1>
           <p className="text-slate-600 mt-2">Property Access Management</p>
         </div>
 
@@ -60,16 +67,19 @@ export function LoginPage() {
             Sign in with Keycloak
           </button>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500">
-              Don't have access?{' '}
-              <a
-                href="/request-access"
-                className="text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Request access
-              </a>
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <p className="text-sm text-slate-500 text-center mb-3">
+              Don't have an account?
             </p>
+            <a
+              href={registrationUrl}
+              className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              Request Access
+            </a>
           </div>
         </div>
 

@@ -25,10 +25,25 @@ const port = process.env.PORT || 3001;
 // Security headers
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - allow dashboard and Keycloak origins
+// AICODE-NOTE: KEYCLOAK_URL may be internal Docker URL (keycloak:8080), but browser sends
+// requests from external URL (localhost:8080), so we include both explicitly
+const allowedOrigins = [
+  process.env.CORS_ORIGIN || 'http://localhost:3000',
+  process.env.KEYCLOAK_URL || 'http://localhost:8080',
+  'http://localhost:8080', // Browser-facing Keycloak URL for registration form
+];
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, etc)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );

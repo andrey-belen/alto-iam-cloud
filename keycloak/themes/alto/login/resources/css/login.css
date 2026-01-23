@@ -593,6 +593,8 @@ label,
 input[type="text"],
 input[type="password"],
 input[type="email"],
+input[type="tel"],
+select,
 .form-control,
 #username,
 #password,
@@ -1095,6 +1097,164 @@ a:hover {
 /* ============================================
    Register page specific
    ============================================ */
-#kc-register-form .form-group {
+/* Register form uses standard form-group margin (1.25rem) from line 579-582 */
+
+/* Name fields in a row */
+.alto-name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.alto-name-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.alto-name-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--slate-700);
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .alto-name-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form buttons container */
+.alto-form-buttons {
+  margin-top: 1.5rem;
+}
+
+/* Primary button - improved styling */
+.alto-btn-primary,
+button.alto-btn-primary,
+#kc-register-form button[type="submit"] {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: white;
+  background: var(--slate-900);
+  border: none;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.alto-btn-primary:hover,
+button.alto-btn-primary:hover,
+#kc-register-form button[type="submit"]:hover {
+  background: var(--slate-800);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.alto-btn-primary:focus,
+button.alto-btn-primary:focus,
+#kc-register-form button[type="submit"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+}
+
+.alto-btn-primary:active,
+button.alto-btn-primary:active,
+#kc-register-form button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+/* Password section frame */
+.alto-password-section {
+  margin-top: 0.875rem;
+  padding: 1.25rem 1.25rem 1.25rem 1.25rem;
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+}
+
+.alto-password-header {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--slate-700);
   margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.alto-password-section .form-group {
+  margin-bottom: 0.875rem;
+}
+
+.alto-password-section .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.alto-password-section label {
+  margin-bottom: 0.5rem;
+}
+
+.alto-password-section input[type="password"] {
+  background: white !important;
+}
+
+/* Form footer - back to login */
+.alto-form-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--slate-100);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--slate-500);
+}
+
+.alto-form-footer a {
+  color: var(--violet-600);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.alto-form-footer a:hover {
+  color: var(--violet-500);
+  text-decoration: underline;
+}
+
+/* Tighter form spacing for registration */
+#kc-register-form {
+  max-width: 100%;
+}
+
+/* Form group margin inherits from general form elements (lines 579-582) */
+
+/* Label styling inherits from general form elements (lines 584-591) */
+
+/* Input styling inherits from general form elements (lines 593-615) */
+
+/* Select dropdown specific styling */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.5rem !important;
+  cursor: pointer;
+}
+
+select:focus {
+  background-color: white !important;
+}
+
+select option {
+  padding: 0.5rem;
 }

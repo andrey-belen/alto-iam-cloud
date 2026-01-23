@@ -33,9 +33,9 @@ variable "target_realm_id" {
   default     = "alto"
 }
 
-# CRM Dashboard
-variable "crm_dashboard_url" {
-  description = "CRM Dashboard URL for OAuth redirects"
+# Alto CERO IAM Dashboard
+variable "iam_dashboard_url" {
+  description = "Alto CERO IAM Dashboard URL for OAuth redirects"
   type        = string
   default     = "http://localhost:3000"
 }

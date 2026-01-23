@@ -1,5 +1,5 @@
 # AICODE-NOTE: Docker Compose for Alto IAM development environment
-# Includes: PostgreSQL, Keycloak, CRM Dashboard, API, MailHog
+# Includes: PostgreSQL, Keycloak, Alto CERO IAM Dashboard, API, MailHog
 
 version: '3.8'
 
@@ -111,8 +111,8 @@ services:
 
       # Keycloak Configuration
       KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-alto-crm}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-alto}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-alto-cero-iam}
       KEYCLOAK_ADMIN_REALM: master
       KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-admin-cli}
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
@@ -147,20 +147,20 @@ services:
       - full
 
   # ============================================================================
-  # Alto CRM Dashboard (React + Vite)
+  # Alto CERO IAM Dashboard (React + Vite)
   # ============================================================================
-  crm-dashboard:
+  alto-cero-iam:
     build:
-      context: ./crm-dashboard
+      context: ./alto-cero-iam
       dockerfile: Dockerfile
       args:
         VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8080}
-        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-master}
-        VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-alto-crm}
+        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-alto}
+        VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-alto-cero-iam}
         VITE_API_URL: ${VITE_API_URL:-/api}
-    container_name: alto-crm-dashboard
+    container_name: alto-cero-iam
     ports:
-      - "${CRM_PORT:-3000}:80"
+      - "${IAM_PORT:-3000}:80"
     depends_on:
       - api
     healthcheck:
@@ -174,23 +174,23 @@ services:
       - full
 
   # ============================================================================
-  # CRM Dashboard Development Server (hot reload)
+  # Alto CERO IAM Dashboard Development Server (hot reload)
   # ============================================================================
-  crm-dashboard-dev:
+  alto-cero-iam-dev:
     image: node:20-alpine
-    container_name: alto-crm-dashboard-dev
+    container_name: alto-cero-iam-dev
     working_dir: /app
     command: sh -c "npm install && npm run dev -- --host"
     environment:
       VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8080}
-      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-master}
-      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-alto-crm}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-alto}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-alto-cero-iam}
       VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
     ports:
-      - "${CRM_PORT:-3000}:3000"
+      - "${IAM_PORT:-3000}:3000"
     volumes:
-      - ./crm-dashboard:/app:delegated
-      - crm_node_modules:/app/node_modules
+      - ./alto-cero-iam:/app:delegated
+      - iam_node_modules:/app/node_modules
     depends_on:
       - api-dev
     networks:
@@ -217,8 +217,8 @@ services:
 
       # Keycloak Configuration
       KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-alto-crm}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-alto}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-alto-cero-iam}
       KEYCLOAK_ADMIN_REALM: master
       KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-admin-cli}
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
@@ -281,7 +281,7 @@ services:
 volumes:
   postgres_data:
     driver: local
-  crm_node_modules:
+  iam_node_modules:
     driver: local
   api_node_modules:
     driver: local

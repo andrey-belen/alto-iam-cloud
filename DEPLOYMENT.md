@@ -34,7 +34,7 @@ cloudflared tunnel create alto-iam
 # Note the tunnel ID from output
 # Create routes (replace YOUR_DOMAIN)
 cloudflared tunnel route dns alto-iam auth.YOUR_DOMAIN.com
-cloudflared tunnel route dns alto-iam crm.YOUR_DOMAIN.com
+cloudflared tunnel route dns alto-iam iam.YOUR_DOMAIN.com
 ```
 
 ### 3. Configure Tunnel
@@ -49,8 +49,8 @@ ingress:
   # Keycloak
   - hostname: auth.YOUR_DOMAIN.com
     service: http://localhost:8080
-  # CRM Dashboard
-  - hostname: crm.YOUR_DOMAIN.com
+  # Alto CERO IAM
+  - hostname: iam.YOUR_DOMAIN.com
     service: http://localhost:3000
   # API
   - hostname: api.YOUR_DOMAIN.com
@@ -65,7 +65,7 @@ ingress:
 cat > .env << 'EOF'
 # Domain Configuration
 PUBLIC_URL=https://auth.YOUR_DOMAIN.com
-CRM_URL=https://crm.YOUR_DOMAIN.com
+IAM_URL=https://iam.YOUR_DOMAIN.com
 API_URL=https://api.YOUR_DOMAIN.com
 
 # Keycloak
@@ -77,10 +77,10 @@ POSTGRES_USER=keycloak
 POSTGRES_PASSWORD=<strong-password>
 POSTGRES_DB=keycloak
 
-# CRM Dashboard (build-time)
+# Alto CERO IAM (build-time)
 VITE_KEYCLOAK_URL=https://auth.YOUR_DOMAIN.com
 VITE_KEYCLOAK_REALM=master
-VITE_KEYCLOAK_CLIENT_ID=alto-crm
+VITE_KEYCLOAK_CLIENT_ID=alto-cero-iam
 VITE_API_URL=https://api.YOUR_DOMAIN.com/api
 
 # API
@@ -121,7 +121,7 @@ cd terraform
 cat > terraform.tfvars << 'EOF'
 keycloak_url          = "http://localhost:8080"
 keycloak_admin_password = "<your-admin-password>"
-crm_dashboard_url     = "https://crm.YOUR_DOMAIN.com"
+iam_dashboard_url     = "https://iam.YOUR_DOMAIN.com"
 smtp_user             = "your-email@gmail.com"
 smtp_password         = "your-app-password"
 smtp_from             = "your-email@gmail.com"
@@ -136,8 +136,8 @@ terraform apply
 
 After deployment:
 - **Keycloak Admin**: https://auth.YOUR_DOMAIN.com/admin
-- **CRM Dashboard**: https://crm.YOUR_DOMAIN.com
-- **Request Access**: https://crm.YOUR_DOMAIN.com/request-access
+- **Alto CERO IAM**: https://iam.YOUR_DOMAIN.com
+- **Request Access**: https://iam.YOUR_DOMAIN.com/request-access
 - **API Health**: https://api.YOUR_DOMAIN.com/api/health
 
 ## Default Credentials
@@ -155,7 +155,7 @@ After deployment:
 Cloudflare Tunnel
     │
     ├── auth.domain.com ──→ Keycloak (8080)
-    ├── crm.domain.com ──→ CRM Dashboard (3000)
+    ├── iam.domain.com ──→ Alto CERO IAM (3000)
     └── api.domain.com ──→ API Server (3001)
 ```
 
