@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { requireSuperAdmin } from '../middleware/client-access.js';
@@ -7,6 +8,9 @@ import { emailService } from '../services/email.service.js';
 import { keycloakAdmin } from '../services/keycloak-admin.service.js';
 import { logger } from '../lib/logger.js';
 import { AccessRequestStatus } from '@prisma/client';
+
+// AICODE-NOTE: Admin email for notifications - set in environment
+const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'andrey.b@altotech.net';
 
 // AICODE-NOTE: Access requests CRUD routes
 // Public route for submitting, authenticated routes for management
@@ -47,7 +51,11 @@ router.post(
     try {
       const data = CreateAccessRequestSchema.parse(req.body);
 
-      // Create access request
+      // Generate approval token (valid for 24 hours)
+      const approvalToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // Create access request with approval token
       const accessRequest = await prisma.accessRequest.create({
         data: {
           company: data.company,
@@ -56,6 +64,8 @@ router.post(
           email: data.email,
           phone: data.phone,
           rolePreference: data.rolePreference,
+          approvalToken,
+          tokenExpiresAt,
         },
       });
 
@@ -66,7 +76,25 @@ router.post(
         data.company
       );
 
-      // TODO: Send notification to alto-admin for approval
+      // AICODE-NOTE: Send notification to admin with approve/reject links
+      const dashboardUrl = process.env.DASHBOARD_URL || 'https://alto-auth.altotech.ai';
+      const approveUrl = `${dashboardUrl}/approve/${approvalToken}`;
+      const rejectUrl = `${dashboardUrl}/reject/${approvalToken}`;
+
+      await emailService.sendAdminApprovalRequest(
+        ADMIN_EMAIL,
+        {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          company: data.company,
+          phone: data.phone,
+          rolePreference: data.rolePreference,
+          createdAt: accessRequest.createdAt,
+        },
+        approveUrl,
+        rejectUrl
+      );
 
       logger.info(
         { requestId: accessRequest.id, email: data.email, company: data.company },
