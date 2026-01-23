@@ -109,6 +109,188 @@ router.post(
 );
 
 // ============================================================================
+// Public Token-Based Routes (Magic Links from Email)
+// ============================================================================
+
+// AICODE-NOTE: Get access request by token (for magic link approval page)
+router.get(
+  '/token/:token',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { token } = req.params;
+
+      const request = await prisma.accessRequest.findUnique({
+        where: { approvalToken: token },
+      });
+
+      if (!request) {
+        res.status(404).json({ error: 'Request not found or link expired' });
+        return;
+      }
+
+      // Check if token has expired
+      if (request.tokenExpiresAt && new Date() > request.tokenExpiresAt) {
+        res.status(400).json({ error: 'Link has expired', status: 'expired' });
+        return;
+      }
+
+      // Check if already processed
+      if (request.status !== 'pending') {
+        res.status(400).json({ error: `Request already ${request.status}`, status: request.status });
+        return;
+      }
+
+      res.json(request);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// AICODE-NOTE: Approve access request by token (magic link)
+router.post(
+  '/token/:token/approve',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { token } = req.params;
+      const { role } = req.body;
+
+      const request = await prisma.accessRequest.findUnique({
+        where: { approvalToken: token },
+      });
+
+      if (!request) {
+        res.status(404).json({ error: 'Request not found or link expired' });
+        return;
+      }
+
+      if (request.tokenExpiresAt && new Date() > request.tokenExpiresAt) {
+        res.status(400).json({ error: 'Link has expired' });
+        return;
+      }
+
+      if (request.status !== 'pending') {
+        res.status(400).json({ error: 'Request has already been processed' });
+        return;
+      }
+
+      const finalRole = role || request.rolePreference;
+      const realmName = 'alto';
+
+      // Create user in Keycloak
+      try {
+        const userId = await keycloakAdmin.createUser(realmName, {
+          username: request.email,
+          email: request.email,
+          firstName: request.firstName,
+          lastName: request.lastName,
+          enabled: true,
+          emailVerified: false,
+        });
+
+        // Pre-create email-authenticator credential for immediate MFA
+        await keycloakAdmin.createEmailAuthenticatorCredential(
+          realmName,
+          userId,
+          request.email
+        );
+
+        // Send password reset email
+        await keycloakAdmin.sendPasswordResetEmail(realmName, userId);
+
+        logger.info(
+          { requestId: request.id, userId, role: finalRole },
+          'User created via magic link approval'
+        );
+      } catch (error) {
+        logger.error({ error, requestId: request.id }, 'Failed to create Keycloak user');
+        res.status(500).json({ error: 'Failed to create user account' });
+        return;
+      }
+
+      // Update request status
+      const updatedRequest = await prisma.accessRequest.update({
+        where: { id: request.id },
+        data: {
+          status: 'approved',
+          processedBy: 'magic-link',
+          processedAt: new Date(),
+        },
+      });
+
+      // Send welcome email
+      const dashboardUrl = process.env.DASHBOARD_URL || 'https://alto-auth.altotech.ai';
+      await emailService.sendWelcomeEmail(
+        request.email,
+        request.firstName,
+        finalRole,
+        dashboardUrl
+      );
+
+      logger.info({ requestId: request.id }, 'Access request approved via magic link');
+
+      res.json(updatedRequest);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// AICODE-NOTE: Reject access request by token (magic link)
+router.post(
+  '/token/:token/reject',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { token } = req.params;
+      const { reason } = req.body;
+
+      const request = await prisma.accessRequest.findUnique({
+        where: { approvalToken: token },
+      });
+
+      if (!request) {
+        res.status(404).json({ error: 'Request not found or link expired' });
+        return;
+      }
+
+      if (request.tokenExpiresAt && new Date() > request.tokenExpiresAt) {
+        res.status(400).json({ error: 'Link has expired' });
+        return;
+      }
+
+      if (request.status !== 'pending') {
+        res.status(400).json({ error: 'Request has already been processed' });
+        return;
+      }
+
+      // Update request status
+      const updatedRequest = await prisma.accessRequest.update({
+        where: { id: request.id },
+        data: {
+          status: 'rejected',
+          processedBy: 'magic-link',
+          processedAt: new Date(),
+        },
+      });
+
+      // Send rejection email
+      await emailService.sendAccessRequestRejected(
+        request.email,
+        request.firstName,
+        request.company,
+        reason
+      );
+
+      logger.info({ requestId: request.id }, 'Access request rejected via magic link');
+
+      res.json(updatedRequest);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ============================================================================
 // Protected Routes - ALTO ADMINS ONLY (client_prefix = "*")
 // ============================================================================
 
