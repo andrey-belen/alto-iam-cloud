@@ -35,27 +35,27 @@
         .logo-text {
             font-size: 28px;
             font-weight: bold;
-            color: #1a365d;
+            color: #8b5cf6;
         }
         h1 {
-            color: #1a365d;
+            color: #6d28d9;
             font-size: 24px;
             margin-bottom: 20px;
             text-align: center;
         }
         .otp-code {
-            background-color: #f0f4f8;
-            border: 2px dashed #3182ce;
-            border-radius: 8px;
-            padding: 20px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border: 2px solid #8b5cf6;
+            border-radius: 12px;
+            padding: 24px;
             text-align: center;
             margin: 30px 0;
         }
         .otp-code .code {
-            font-size: 36px;
+            font-size: 40px;
             font-weight: bold;
-            letter-spacing: 8px;
-            color: #2c5282;
+            letter-spacing: 10px;
+            color: #7c3aed;
             font-family: 'Courier New', monospace;
         }
         .expiry-notice {
@@ -80,7 +80,7 @@
             border-top: 1px solid #e2e8f0;
         }
         .footer a {
-            color: #3182ce;
+            color: #8b5cf6;
             text-decoration: none;
         }
     </style>

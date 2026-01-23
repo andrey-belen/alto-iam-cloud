@@ -10,6 +10,7 @@
 *.tfstate
 *.tfstate.*
 *.tfvars
+!terraform/terraform.tfvars
 .terraform/
 .terraform.lock.hcl
 crash.log
@@ -61,4 +62,3 @@ tmp/
 
 # Prisma
 prisma/migrations/migration_lock.toml
-*.tfvars
