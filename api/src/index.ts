@@ -69,15 +69,15 @@ app.use(express.json());
 app.use('/health', healthRouter);
 
 // Public routes (no auth required)
-app.use('/api/public', publicRouter);
+app.use('/public', publicRouter);
 
-// Protected routes
-app.use('/api/access-requests', accessRequestsRouter);
-app.use('/api/properties', propertiesRouter);
-app.use('/api/site-access', siteAccessRouter);
+// AICODE-NOTE: Routes without /api prefix - Caddy strips /api before forwarding
+app.use('/access-requests', accessRequestsRouter);
+app.use('/properties', propertiesRouter);
+app.use('/site-access', siteAccessRouter);
 
 // Nested user routes under properties
-app.use('/api/properties', usersRouter);
+app.use('/properties', usersRouter);
 
 // ============================================================================
 // Error Handling
